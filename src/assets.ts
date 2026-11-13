@@ -7,6 +7,7 @@ export const assets = {
   shelter: { path: "", scale: 1, yaw: 0, offset: [0, 0, 0] },
   astronaut: {
     path: "models/player.glb",
+    revision: "idle-20261113",
     scale: 1,
     yaw: Math.PI,
     offset: [0, 0, 0],
@@ -55,7 +56,10 @@ export async function astronaut() {
     rootMotionTracks = 0;
   try {
     const gltf = await new GLTFLoader().loadAsync(
-      import.meta.env.BASE_URL + assets.astronaut.path,
+      import.meta.env.BASE_URL +
+        assets.astronaut.path +
+        "?v=" +
+        encodeURIComponent(assets.astronaut.revision),
     );
     clipNames = gltf.animations.map((a) => a.name);
     const model = gltf.scene;
