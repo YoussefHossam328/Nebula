@@ -28,6 +28,8 @@ export const defaults = {
   shakeDuration: 0.25,
   resolution: 1.5,
   shadows: true,
+  stationRoof: true,
+  stationCutaway: true,
 };
 export type Settings = typeof defaults;
 export function validate(input: unknown): Settings {
@@ -40,6 +42,8 @@ export function validate(input: unknown): Settings {
     if (
       v === undefined &&
       [
+        "stationRoof",
+        "stationCutaway",
         "landingShake",
         "runningShake",
         "followDelay",

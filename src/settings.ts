@@ -94,6 +94,7 @@ export function panel(
         "shakeDuration",
       ],
     ],
+    ["Station view", ["stationRoof", "stationCutaway"]],
     ["Rendering", ["resolution", "shadows"]],
   ] as const;
   for (const [name, keys] of groups) {

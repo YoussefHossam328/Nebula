@@ -1,3 +1,4 @@
+import { attachHelp, legacyHelp } from "../setting-help";
 import { mockProvider } from "../data/mock-provider";
 import { Simulation } from "./simulation";
 import { encodeScenario, decodeScenario, validateScenario } from "./config";
@@ -17,7 +18,7 @@ export async function training(clearInput: () => void) {
   let active = false;
   let last = performance.now();
   let level = "";
-  host.innerHTML = `<b>OUTPOST / RESOURCE TRAINING</b><p class="source"></p><p>Making oxygen uses battery power. Keep both above zero until the training timer ends.</p><div class="meters"><label>Battery <meter id="battery-meter" min="0" max="100"></meter><span id="battery-text"></span></label><label>Oxygen reserve <meter id="oxygen-meter" min="0" max="100"></meter><span id="oxygen-text"></span></label></div><p id="training-status" aria-live="polite"></p><p id="training-prompt"></p><div class="training-actions"><button id="training-start">Start resource training</button><button id="training-pause">Pause</button><button id="training-restart">Restart training</button><button id="training-exit">Exit training</button></div><details><summary>About this model / resource settings</summary><p>Fictional training units, not NASA measurements. Reserves belong to an abstract outpost, not your suit. The oxygen maker requires electricity and an assumed available feedstock. No recharging occurs during this short exercise. Movement does not affect consumption.</p><p>Editing pauses training. Apply restarts with your new settings.</p><form id="resource-form"></form><button id="resource-export">Export resource settings</button><button id="resource-import">Import resource settings</button><button id="resource-reset">Default resource settings</button></details><p id="resource-message" role="status"></p>`;
+  host.innerHTML = `<b>OUTPOST / TRAINING MODES</b><div class="training-actions"><button id="training-start">Start resource training</button><button id="training-pause">Pause</button><button id="training-restart">Restart training</button><button id="training-exit">Exit training</button></div><p class="source"></p><p>Legacy oxygen exercise: solar charging is disabled here. Choose Base maintenance for solar power and the full station scenario.</p><div class="meters"><label>Battery <meter id="battery-meter" min="0" max="100"></meter><span id="battery-text"></span></label><label>Oxygen reserve <meter id="oxygen-meter" min="0" max="100"></meter><span id="oxygen-text"></span></label></div><p id="training-status" aria-live="polite"></p><p id="training-prompt"></p><details><summary>About this model / resource settings</summary><p>Fictional training units, not NASA measurements. Reserves belong to an abstract outpost, not your suit. The oxygen maker requires electricity and an assumed available feedstock. No recharging occurs during this short exercise. Movement does not affect consumption.</p><p>Editing pauses training. Apply restarts with your new settings.</p><form id="resource-form"></form><button id="resource-export">Export resource settings</button><button id="resource-import">Import resource settings</button><button id="resource-reset">Default resource settings</button></details><p id="resource-message" role="status"></p>`;
   host.querySelector(".source")!.textContent = source.attribution;
   const el = (id: string) => document.getElementById(id)!;
   const message = (s: string) => {
@@ -90,11 +91,17 @@ export async function training(clearInput: () => void) {
       input.value = String(config[key]);
       input.required = true;
       label.append(input);
+      attachHelp(label, legacyHelp[key], input);
       form.append(label);
     }
     const button = document.createElement("button");
     button.textContent = "Apply and restart";
     form.append(button);
+    attachHelp(
+      form,
+      "Validate the legacy training values and restart the two-minute exercise. These are fictional units, separate from base maintenance.",
+      button,
+    );
   }
   function save() {
     try {
@@ -158,6 +165,23 @@ export async function training(clearInput: () => void) {
     reset();
   };
   fields();
+  for (const [id, text] of [
+    [
+      "resource-export",
+      "Download only legacy exercise values as JSON; separate from base maintenance settings.",
+    ],
+    [
+      "resource-import",
+      "Load a compatible legacy exercise file and restart that exercise.",
+    ],
+    ["resource-reset", "Restore legacy exercise defaults and restart it."],
+  ]) {
+    const button = el(id);
+    const wrapper = document.createElement("div");
+    button.before(wrapper);
+    wrapper.append(button);
+    attachHelp(wrapper, text, button);
+  }
   function render() {
     host.classList.toggle("active", active);
     for (const name of ["battery", "oxygen"] as const) {
@@ -172,7 +196,7 @@ export async function training(clearInput: () => void) {
         sim.on &&
         config.oxygenProduction > config.oxygenConsumption;
       el(name + "-text").textContent =
-        `${percent.toFixed(1)}% · ${rising ? "↑ rising" : "↓ falling"}`;
+        `${percent.toFixed(1)}% · ${!active || sim.state !== "running" ? "— stable" : rising ? "↑ rising" : "↓ falling"}`;
     }
     el("training-start").hidden = active;
     for (const name of ["pause", "restart", "exit"])

@@ -42,7 +42,7 @@ export function baseUI(
   const launcher = document.createElement("button");
   launcher.id = "base-start";
   launcher.textContent = `Start base maintenance · ${saved.sols} sols`;
-  (document.querySelector(".training-actions") ?? document.body).append(
+  (document.querySelector(".training-actions") ?? document.body).prepend(
     launcher,
   );
   function persist() {

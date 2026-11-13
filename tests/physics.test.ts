@@ -131,3 +131,18 @@ it("climbs a shallow ramp and rejects a steep ramp", () => {
     w.free();
   }
 });
+it("retains input facing while asymmetric velocity components brake to zero", () => {
+  const { w, c, tick } = setup();
+  tick(60, { x: 0.6, z: 0.8 });
+  const heading = Math.atan2(0.6, 0.8);
+  expect(c.facingYaw).toBeCloseTo(heading);
+  for (let i = 0; i < 60; i++) {
+    tick(1);
+    expect(c.facingYaw).toBeCloseTo(heading);
+  }
+  expect(c.vx).toBe(0);
+  expect(c.vz).toBe(0);
+  tick(1, { x: -1, z: 0 });
+  expect(c.facingYaw).toBeCloseTo(-Math.PI / 2);
+  w.free();
+});

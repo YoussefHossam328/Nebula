@@ -11,6 +11,7 @@ import "./style.css";
 import { baseUI } from "./base/ui";
 import { baseVisuals } from "./base/visuals";
 import { SOL_SECONDS } from "./base/config";
+import { describePanel } from "./setting-help";
 import { training } from "./resources/ui";
 const status = document.querySelector<HTMLElement>("#status")!;
 let noticeUntil = 0;
@@ -99,6 +100,7 @@ async function start() {
     (c) => baseScene.configure(c),
   );
   baseScene.configure(base.sim.config);
+  describePanel(settingsPanel);
   let lastRunShake = 0;
   function frame(now: number) {
     requestAnimationFrame(frame);
@@ -210,6 +212,11 @@ async function start() {
         ? 0x9ce5b2
         : 0x436a69,
     );
+    const stationState = area.station.update(
+      { x: p.x, y: p.y - player.height / 2, z: p.z },
+      s,
+      base.active ? base.sim.flows().surplus > 0 : undefined,
+    );
     const rendered = previous.clone().lerp(current, accumulator / DT);
     visual.root.position.set(
       rendered.x,
@@ -217,8 +224,7 @@ async function start() {
       rendered.z,
     );
     visual.root.scale.y = player.height / s.standing;
-    if (Math.hypot(player.vx, player.vz) > 0.1)
-      visual.root.rotation.y = Math.atan2(player.vx, player.vz);
+    visual.root.rotation.y = player.facingYaw;
     visual.update(
       dt,
       !player.grounded
@@ -254,6 +260,9 @@ async function start() {
         position: { ...p },
         grounded: player.grounded,
         crouched: player.crouched,
+        facingYaw: player.facingYaw,
+        station: stationState,
+        horizontalSpeed: Math.hypot(player.vx, player.vz),
         settings: s,
         base: base.active
           ? {

@@ -9,6 +9,7 @@ export class Character {
   crouched = false;
   vx = 0;
   vz = 0;
+  facingYaw = 0;
   vy = 0;
   height: number;
   radius: number;
@@ -74,7 +75,8 @@ export class Character {
     }
     this.crouched = this.height < s.standing - 0.01;
     const speed = this.crouched ? s.crouchSpeed : run ? s.run : s.walk;
-    const moving = Math.hypot(axis.x, axis.z) > 0;
+    const moving = Math.hypot(axis.x, axis.z) > 1e-5;
+    if (moving) this.facingYaw = Math.atan2(axis.x, axis.z);
     const a =
       (moving ? s.acceleration : s.braking) *
       (this.grounded ? 1 : s.airControl) *
