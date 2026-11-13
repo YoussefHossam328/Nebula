@@ -12,6 +12,8 @@ import { baseUI } from "./base/ui";
 import { baseVisuals } from "./base/visuals";
 import { SOL_SECONDS } from "./base/config";
 import { describePanel } from "./setting-help";
+import { smoothHeading } from "./turning";
+import { GameAudio } from "./audio";
 import { training } from "./resources/ui";
 const status = document.querySelector<HTMLElement>("#status")!;
 let noticeUntil = 0;
@@ -24,6 +26,7 @@ function notice(text: string) {
 async function start() {
   const canvas = document.querySelector<HTMLCanvasElement>("#world")!;
   const s = load();
+  const audio = new GameAudio(s);
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
   renderer.setClearColor(0xb87b60);
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -100,8 +103,14 @@ async function start() {
     (c) => baseScene.configure(c),
   );
   baseScene.configure(base.sim.config);
+  settingsPanel
+    .addFolder("Audio · preview")
+    .add({ previewAudio: () => audio.preview() }, "previewAudio")
+    .name("Preview landing sound");
   describePanel(settingsPanel);
-  let lastRunShake = 0;
+  let lastRunShake = 0,
+    visibleHeading = 0,
+    hadContact = false;
   function frame(now: number) {
     requestAnimationFrame(frame);
     const dt = Math.min((now - last) / 1000, 0.1);
@@ -134,6 +143,11 @@ async function start() {
       if (current.distanceTo(previous) > 5) {
         previous.copy(current);
         follow.reset();
+      }
+      if (wasGrounded && !player.grounded && player.vy > 0) audio.play("jump");
+      if (!wasGrounded && player.grounded) {
+        if (hadContact) audio.play("land");
+        hadContact = true;
       }
       if (!wasGrounded && player.grounded && s.landingShake) follow.shake(s);
       if (
@@ -224,7 +238,20 @@ async function start() {
       rendered.z,
     );
     visual.root.scale.y = player.height / s.standing;
-    visual.root.rotation.y = player.facingYaw;
+    const turningInput = input.axes();
+    if (Math.hypot(turningInput.x, turningInput.z) > 0)
+      visibleHeading = smoothHeading(
+        visibleHeading,
+        player.facingYaw,
+        s.turnResponsiveness,
+        dt,
+      );
+    visual.root.rotation.y = visibleHeading;
+    audio.update(
+      p,
+      player.grounded,
+      Math.hypot(player.vx, player.vz) > s.walk + 0.2,
+    );
     visual.update(
       dt,
       !player.grounded
@@ -236,6 +263,7 @@ async function start() {
             : Math.hypot(player.vx, player.vz) > 0.1
               ? "walk"
               : "idle",
+      s,
     );
     target.set(
       rendered.x,
@@ -261,6 +289,9 @@ async function start() {
         grounded: player.grounded,
         crouched: player.crouched,
         facingYaw: player.facingYaw,
+        visualYaw: visibleHeading,
+        model: visual.info,
+        audio: audio.status,
         station: stationState,
         horizontalSpeed: Math.hypot(player.vx, player.vz),
         settings: s,

@@ -83,3 +83,15 @@ The main scene is now a compact station rather than the scattered movement cours
 Every developer control now has a short inline explanation, units where applicable, and accessible input help. Base settings explain that changes pause the run and require Apply/restart; legacy exercise fields explicitly use fictional units. Existing saved settings receive the new station-view defaults without losing their previous values.
 
 Facing follows the last nonzero movement input and remains fixed during braking. It no longer follows independently decelerating X/Z velocity components, which could rotate the astronaut as one component reached zero before the other. Movement acceleration and braking behavior are otherwise unchanged.
+
+## Supplied player and audio
+
+`public/models/player.glb` is the user-supplied astronaut. The embedded clips are `Armature|mixamo.com|Layer0` and `mixamo.com` (both approximately 1.617 seconds, closely related locomotion exports). The second supplies walking and faster running playback. Horizontal hip travel is removed at runtime so animation cannot move the mesh away from the Rapier body. The loaded model is fitted to a 1.6 m reference visual height; its physics collider stays independent.
+
+There are no separately named authored idle/jump/crouch clips in this file. Missing states use a static pose sampled from locomotion; crouching retains the prototype visual-height adjustment. This is an explicit fallback, not a claim of a complete animation set. The asset manifest supports adding properly named clips later. Original GLB data is retained unchanged. Adjust visual scale, forward-direction correction, foot offset, crossfade time and locomotion playback in **Settings → Player model and animation**.
+
+Turning now interpolates the shortest arc between headings while movement input is active. Release freezes the visible heading, so easing does not introduce an extra turn afterward. **turnResponsiveness** controls how quickly turns happen. Keyboard movement still requests eight directions; the visual transition between them is continuous.
+
+The nine user-supplied WAVs live under `public/audio/`: an eight-second background loop, three walking variations, three sprint variations, jump and landing. Browser playback unlocks after a click/key press. Steps are based on actual grounded travel (not merely holding a key against a wall). Audio suspends on focus loss/hidden tabs, with independent master/ambience/effects volumes and step distances under **Settings → Audio**; **Audio · preview** tests the landing sound. If browser audio is unavailable, the game continues.
+
+Physical dose remains cumulative. The exposure HUD now explicitly distinguishes past absorbed mGy from the incoming dose rate and shows the shelter’s modeled rate reduction. A separate recoverable game stress meter is pending the user's choice; no scientific dose-decay mechanic has been invented.

@@ -30,7 +30,7 @@ export function baseUI(
   host.className = "base-hud";
   host.hidden = true;
   host.setAttribute("aria-label", "Seven-sol base operations");
-  host.innerHTML = `<b>NEBULA / BASE OPERATIONS</b><p id="base-clock"></p><div class="base-actions"><button id="base-pause">Pause</button><button id="base-restart">Restart scenario</button><button id="base-exit">Exit to sandbox</button></div><div class="base-meters"><label>Battery <meter id="base-energy" min="0" max="100"></meter><span id="base-energy-text"></span></label><label>Oxygen reserve <meter id="base-oxygen" min="0" max="100"></meter><span id="base-oxygen-text"></span></label><label>Accumulated exposure · mGy <meter id="base-dose" min="0" max="100"></meter><span id="base-dose-text"></span></label></div><p id="base-power"></p><p id="base-location"></p><p id="base-event" role="status"></p><p id="base-prompt"></p><progress id="base-clean" max="1" value="0" aria-label="Cleaning progress"></progress><p id="base-outcome" role="status"></p><p class="base-source">Historical dose anchor + reconstructed timing. Settings → Base / Sources.</p>`;
+  host.innerHTML = `<b>NEBULA / BASE OPERATIONS</b><p id="base-clock"></p><div class="base-actions"><button id="base-pause">Pause</button><button id="base-restart">Restart scenario</button><button id="base-exit">Exit to sandbox</button></div><div class="base-meters"><label>Battery <meter id="base-energy" min="0" max="100"></meter><span id="base-energy-text"></span></label><label>Oxygen reserve <meter id="base-oxygen" min="0" max="100"></meter><span id="base-oxygen-text"></span></label><label>Accumulated exposure · mGy <meter id="base-dose" min="0" max="100"></meter><span id="base-dose-text"></span></label></div><p id="base-power"></p><p id="base-location"></p><p id="base-exposure-note" class="base-source"></p><p id="base-event" role="status"></p><p id="base-prompt"></p><progress id="base-clean" max="1" value="0" aria-label="Cleaning progress"></progress><p id="base-outcome" role="status"></p><p class="base-source">Historical dose anchor + reconstructed timing. Settings → Base / Sources.</p>`;
   document.body.append(host);
   const el = (id: string) => host.querySelector<HTMLElement>("#" + id)!;
   const settingsMessage = document.createElement("p");
@@ -297,6 +297,13 @@ export function baseUI(
       `PV ${f.pv.toFixed(0)} W · load ${f.load.toFixed(0)} W · net ${(f.pv - f.load).toFixed(0)} W · unmet ${f.unserved.toFixed(0)} W`;
     el("base-location").textContent =
       `${sim.inShelter ? "Inside storm shelter" : "Outside"} · array transmission ${(sim.dust * 100).toFixed(0)}% · ${c.tracking ? "Sun tracking" : "Fixed panel"}`;
+    const outsideRate = doseRate(sim.elapsed, c, false);
+    const shelteredRate = doseRate(sim.elapsed, c, true);
+    const reduction =
+      outsideRate > 0 ? (1 - shelteredRate / outsideRate) * 100 : 0;
+    el("base-exposure-note").textContent = sim.inShelter
+      ? `Shelter reduces incoming dose rate by ${reduction.toFixed(0)}%. Previously absorbed dose remains.`
+      : "Accumulated dose does not decay. Enter the storm shelter to reduce incoming exposure.";
     el("base-event").textContent = sim.eventState();
     (el("base-clean") as HTMLProgressElement).value =
       sim.cleanProgress / c.cleanSeconds;

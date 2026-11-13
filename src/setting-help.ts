@@ -2,6 +2,31 @@ import type GUI from "lil-gui";
 import type { Settings } from "./config";
 import type { BaseConfig } from "./base/config";
 export const generalHelp: Record<keyof Settings, string> = {
+  turnResponsiveness:
+    "How quickly the visible player turns toward the last movement heading. Higher is faster; release never chooses a new angle.",
+  modelOffsetY:
+    "Vertical visual offset in metres to align the feet with the ground; does not move the collision body.",
+  modelScale:
+    "Visual size multiplier for the supplied GLB, after fitting its height. Does not change the physics collider.",
+  modelYaw:
+    "Model forward-direction correction in degrees, independent of movement and camera yaw.",
+  animationBlend:
+    "Crossfade duration in real seconds between available animation states.",
+  walkAnimationRate:
+    "Playback speed multiplier for the supplied locomotion cycle while walking.",
+  runAnimationRate:
+    "Playback speed multiplier for that locomotion cycle while running; this file has no separately named sprint clip.",
+  audioEnabled:
+    "Master sound switch. Browser audio starts after a click or keypress.",
+  masterVolume: "Overall sound volume from 0 (silent) to 1 (full).",
+  ambientVolume:
+    "Relative volume of the supplied Mars background loop, before master volume.",
+  effectsVolume:
+    "Relative volume of footsteps, jump and landing, before master volume.",
+  walkStepDistance:
+    "Actual ground distance in metres between walking sounds. Larger values play fewer steps.",
+  runStepDistance:
+    "Actual ground distance in metres between sprint sounds. No ground steps play while airborne.",
   gravity:
     "Downward acceleration in m/s². Higher gravity makes falls faster and changes the jump launch speed.",
   walk: "Walking speed in metres per second.",
@@ -148,6 +173,8 @@ export const legacyHelp: Record<string, string> = {
     "Percentage below which a critical warning appears. Must be lower than warning.",
 };
 const actionHelp: Record<string, string> = {
+  previewAudio:
+    "Play the supplied landing sound to test the current audio settings. A click unlocks browser audio.",
   reset:
     "Restore the default movement, camera, station-view and rendering settings.",
   export: "Download movement, camera and rendering settings as JSON.",
