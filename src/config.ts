@@ -21,6 +21,8 @@ export const defaults = {
   smoothing: 7,
   followDelay: 0.12,
   shakeEnabled: false,
+  landingShake: true,
+  runningShake: false,
   shakeStrength: 0.06,
   shakeFrequency: 14,
   shakeDuration: 0.25,
@@ -38,6 +40,8 @@ export function validate(input: unknown): Settings {
     if (
       v === undefined &&
       [
+        "landingShake",
+        "runningShake",
         "followDelay",
         "shakeEnabled",
         "shakeStrength",

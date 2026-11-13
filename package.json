@@ -9,7 +9,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:browser": "playwright test",
-    "preview": "vite preview --host 0.0.0.0"
+    "preview": "vite preview --host 0.0.0.0",
+    "refresh:nasa": "python3 scripts/refresh-nasa.py"
   },
   "dependencies": {
     "@dimforge/rapier3d-compat": "^0.21.0",

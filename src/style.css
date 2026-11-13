@@ -242,3 +242,67 @@ footer p {
 .lil-gui summary {
   cursor: pointer;
 }
+body.base-active .training {
+  display: none;
+}
+.base-hud {
+  position: absolute;
+  top: 240px;
+  left: 24px;
+  width: 340px;
+  max-height: calc(100dvh - 420px);
+  overflow: auto;
+  background: #251e19ed;
+  border: 1px solid #b18a64;
+  border-radius: 6px;
+  padding: 16px;
+  font-size: 11px;
+  color: #f2dfc5;
+}
+.base-hud[hidden] {
+  display: none;
+}
+.base-hud p {
+  line-height: 1.5;
+  margin: 8px 0;
+}
+.base-hud b {
+  letter-spacing: 1px;
+}
+.base-hud meter,
+.base-hud progress {
+  display: block;
+  width: 100%;
+}
+.base-hud label {
+  display: block;
+  margin: 8px 0;
+}
+.base-hud button {
+  background: #dfb889;
+  border: 0;
+  border-radius: 3px;
+  padding: 7px;
+  margin: 3px;
+  cursor: pointer;
+}
+.base-source {
+  font-size: 9px;
+  color: #e4bf97;
+}
+.base-methods {
+  padding: 10px;
+  font-size: 11px;
+  line-height: 1.5;
+}
+.base-methods a {
+  color: #9fd3ee;
+}
+@media (max-width: 600px) {
+  .base-hud {
+    top: 220px;
+    left: 12px;
+    width: 270px;
+    max-height: calc(100dvh - 400px);
+  }
+}

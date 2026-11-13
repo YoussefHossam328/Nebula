@@ -8,6 +8,9 @@ import { astronaut } from "./assets";
 import { FollowCamera } from "./camera";
 import { panel } from "./settings";
 import "./style.css";
+import { baseUI } from "./base/ui";
+import { baseVisuals } from "./base/visuals";
+import { SOL_SECONDS } from "./base/config";
 import { training } from "./resources/ui";
 const status = document.querySelector<HTMLElement>("#status")!;
 let noticeUntil = 0;
@@ -43,6 +46,7 @@ async function start() {
   await RAPIER.init();
   const world = new RAPIER.World({ x: 0, y: 0, z: 0 });
   const area = createWorld(scene, world);
+  const baseScene = baseVisuals(scene, world);
   const player = new Character(world, s);
   const visual = await astronaut();
   scene.add(visual.root);
@@ -88,6 +92,14 @@ async function start() {
     .addFolder("Camera · preview")
     .add({ shake: () => follow.shake(s) }, "shake")
     .name("Preview shake (enable first)");
+  const base = baseUI(
+    settingsPanel,
+    () => input.clear(),
+    () => resources?.stop(),
+    (c) => baseScene.configure(c),
+  );
+  baseScene.configure(base.sim.config);
+  let lastRunShake = 0;
   function frame(now: number) {
     requestAnimationFrame(frame);
     const dt = Math.min((now - last) / 1000, 0.1);
@@ -121,7 +133,16 @@ async function start() {
         previous.copy(current);
         follow.reset();
       }
-      if (!wasGrounded && player.grounded) follow.shake(s);
+      if (!wasGrounded && player.grounded && s.landingShake) follow.shake(s);
+      if (
+        s.runningShake &&
+        player.grounded &&
+        Math.hypot(player.vx, player.vz) > s.walk + 0.2 &&
+        elapsed - lastRunShake > 0.35
+      ) {
+        follow.shake(s);
+        lastRunShake = elapsed;
+      }
       accumulator -= DT;
       if (input.take("KeyE")) {
         const p = player.body.translation();
@@ -129,7 +150,8 @@ async function start() {
         const oxygenDistance = Math.hypot(p.x + 2, p.z - 2);
         const beaconDistance = Math.hypot(p.x - 3, p.z - 2);
         const vertical = Math.abs(feet) < 1;
-        if (
+        if (base.active) base.interact({ x: p.x, y: feet, z: p.z });
+        else if (
           resources?.active &&
           vertical &&
           oxygenDistance <= s.interactionRange &&
@@ -142,13 +164,51 @@ async function start() {
       }
     }
     const p = player.body.translation();
+    base.tick(
+      now,
+      { x: p.x, y: p.y - player.height / 2, z: p.z },
+      input.down("KeyE"),
+    );
+    if (base.active) {
+      const light = baseScene.update(
+        base.sim.elapsed,
+        base.sim.config,
+        base.sim.dust,
+      );
+      sun.position.set(
+        light.direction.x * 24,
+        Math.max(0.2, light.direction.y * 24),
+        light.direction.z * 24,
+      );
+      sun.intensity = light.daylight ? 3 : 0;
+      const hemi = scene.children.find(
+        (o) => o instanceof THREE.HemisphereLight,
+      ) as THREE.HemisphereLight;
+      hemi.intensity = light.daylight ? 2.7 : 0.35;
+      renderer.setClearColor(light.daylight ? 0xb87b60 : 0x151b2c);
+      (scene.fog as THREE.Fog).color.setHex(
+        light.daylight ? 0xb87b60 : 0x151b2c,
+      );
+    } else {
+      sun.intensity = 3;
+      sun.position.set(12, 24, 8);
+      (
+        scene.children.find(
+          (o) => o instanceof THREE.HemisphereLight,
+        ) as THREE.HemisphereLight
+      ).intensity = 2.7;
+      renderer.setClearColor(0xb87b60);
+      (scene.fog as THREE.Fog).color.setHex(0xb87b60);
+    }
     resources?.tick(now);
     resources?.prompt(
       Math.hypot(p.x + 2, p.z - 2) <= s.interactionRange &&
         Math.abs(p.y - player.height / 2) < 1,
     );
     area.oxygen.material.color.setHex(
-      resources?.state.on ? 0x9ce5b2 : 0x436a69,
+      (base.active ? base.sim.generatorPowered : resources?.state.on)
+        ? 0x9ce5b2
+        : 0x436a69,
     );
     const rendered = previous.clone().lerp(current, accumulator / DT);
     visual.root.position.set(
@@ -195,6 +255,20 @@ async function start() {
         grounded: player.grounded,
         crouched: player.crouched,
         settings: s,
+        base: base.active
+          ? {
+              state: base.sim.state,
+              elapsed: base.sim.elapsed,
+              sol: base.sim.elapsed / SOL_SECONDS,
+              battery: base.sim.battery,
+              oxygen: base.sim.oxygen,
+              dose: base.sim.dose,
+              cleanProgress: base.sim.cleanProgress,
+              cleanCount: base.sim.cleanCount,
+              sheltered: base.sim.inShelter,
+              tracking: base.sim.config.tracking,
+            }
+          : null,
         resources: resources
           ? {
               state: resources.state.state,

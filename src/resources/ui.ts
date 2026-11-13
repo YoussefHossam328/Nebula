@@ -205,6 +205,13 @@ export async function training(clearInput: () => void) {
   }
   render();
   return {
+    stop() {
+      sim.pause();
+      active = false;
+      sim = new Simulation(config);
+      clearInput();
+      render();
+    },
     mountSettings(container: HTMLElement) {
       container.append(host.querySelector("details")!);
     },

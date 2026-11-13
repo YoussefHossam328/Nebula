@@ -85,14 +85,21 @@ export function panel(
     ["Camera · follow", ["smoothing", "followDelay"]],
     [
       "Camera · shake",
-      ["shakeEnabled", "shakeStrength", "shakeFrequency", "shakeDuration"],
+      [
+        "shakeEnabled",
+        "landingShake",
+        "runningShake",
+        "shakeStrength",
+        "shakeFrequency",
+        "shakeDuration",
+      ],
     ],
     ["Rendering", ["resolution", "shadows"]],
   ] as const;
   for (const [name, keys] of groups) {
     const folder = gui.addFolder(name);
     for (const key of keys) {
-      if (key === "shadows" || key === "shakeEnabled")
+      if (typeof s[key] === "boolean")
         folder.add(s, key).onFinishChange(commit);
       else folder.add(s, key, ...ranges[key]).onFinishChange(commit);
     }

@@ -1,117 +1,156 @@
-# Nebula: energy, space weather and radiation
+# Nebula: seven-sol base maintenance
 
-Status: **Proposed for review; new gameplay systems await approval and answers.** Settings consolidation and camera improvements were separately requested and are being delivered now.
+Status: **Approved for implementation by the user, including sun-tracking arrays.** Settings consolidation, camera interpolation, delay and optional landing shake are already implemented. This plan supersedes the earlier open-ended mechanics proposal.
 
-## Direction
+## Confirmed choices
 
-Build a simulation with explicit inputs, units, state transitions, limitations and reproducible tests. Keep the interface understandable without replacing engineering relationships with arbitrary bonuses. Simulated data remains labeled; physical-looking numbers are not presented as NASA measurements. Placeholder models continue to be replaceable.
+- Maintain a Mars base for **seven in-game days**, with duration adjustable. Recommend interpreting a Mars day as a sol; the remaining decisions below make that explicit.
+- Accelerated day/night cycle, solar charging and manual panel cleaning by **holding interact**. Hold duration must be editable.
+- Accumulated radiation reaching its configured maximum immediately ends the run in a loss. No gradual health bar is required.
+- Use physical radiation units tied to traceable NASA data, separating measurements from reconstructed simulation inputs.
+- Every tuning parameter, including camera controls, belongs in categorized folders in the top-right Settings panel. The HUD remains telemetry and operational controls.
+- Placeholder art and existing movement controls continue; this is a plan for approval, not authorization to add every optional mechanic.
 
-## 1. One settings location — current work
+## Proposed playable loop
 
-Use only the top-right Settings panel for movement, collision/physics, camera framing, camera follow, camera shake, rendering, resource balance, imports/exports and presets. The resource HUD shows telemetry and operational training buttons; it contains no tuning forms. Preserve existing saved values and imports when adding camera fields. New systems must register their settings in named categories here.
+Begin with a charged outpost battery, oxygen reserve, solar array and accessible shelter. During daylight, generation powers equipment and charges storage. At night, stored energy carries the loads. Dust reduces panel output, requiring an EVA to clean the array. Oxygen production competes for energy. Space-weather warnings can prompt the player to postpone maintenance and enter shelter. Survive the configured number of sols with oxygen available and accumulated exposure below the limit.
 
-## 2. Camera — current work
+Recommend a compact initial base with one array, one oxygen unit and one shelter. Additional arrays and habitat expansion can follow. Retain the original pressure-free sandbox as a separate mode.
 
-Interpolate visual character movement between physics ticks. Follow one smoothed target for both camera position and aim, avoiding the former instantaneous look-at response. Add follow delay in seconds independently from smoothing responsiveness. Clear history on reset/teleport. Expose camera framing, delay, smoothing and shake enable/strength/frequency/duration in separate categories. Default delay: 0.12 seconds; shake disabled. Provide a preview and an optional landing trigger. These are editable starting values, not final user preferences. Running shake awaits the user's preference.
+## 1. Clock and scenario duration
 
-Validate interpolation, frame-rate-independent smoothing, history reset, zero delay, settings migration and shake disabling. Camera smoothing cannot restore missing frames on a slow GPU; assess frame time separately from controller jitter.
+Use separate real elapsed time, simulation elapsed time and archived observation timestamps. One proposed sol is approximately **88,775.244 simulation seconds**. An accelerated clock advances energy, oxygen, dust, event profiles and radiation consistently. Movement, camera and hold-to-interact responsiveness remain in real seconds.
 
-## 3. Solar power and rechargeable battery — next recommended implementation
+Proposed editable preset: **180 real seconds per sol**, seven sols per run, approximately **21 real minutes** total before pauses. A scenario-start clock sets whether the first interval begins near morning or night. Display sol number, local solar-time approximation, daylight state and remaining sols.
 
-**Purpose:** replace the permanently dwindling battery with a genuine generation/storage/load balance.
+Pause all simulation systems on manual pause, hidden tabs and focus loss. Resume explicitly. Do not apply hidden-tab catch-up depletion. Integrate transitions across sunrise, sunset, event boundaries and resource depletion rather than skipping them on large elapsed-time updates. Clamp final time to the earliest success/failure boundary; failure wins an exact tie with completion.
 
-- Track generation, oxygen production load, background load, charge/discharge power, stored energy and curtailed energy separately.
-- Proposed model: `PV power = irradiance × panel area × efficiency × orientation factor × dust transmission`, capped by inverter/controller ratings. Use a solar-position/daylight profile with documented simplifications; geometric night gives zero generation.
-- Proposed units: W or kW for power, Wh or kWh for stored energy. Keep conversion explicit: `energy change = net power × simulation seconds / 3600` when power is in W and energy in Wh. Apply charging/discharging efficiency and rated current/power limits; never exceed capacity or draw energy below zero.
-- If using physical units, migrate old normalized energy settings explicitly rather than reinterpreting 70 arbitrary units as 70 kWh. Oxygen also needs a deliberate unit/model choice before conversion. Initially an internally consistent normalized model is possible, with honest labels.
-- Visible placeholder panels show their condition and orientation. Walking to clean or reorient them provides a reason to leave shelter, if approved.
-- Full batteries curtail unused generation. A deficit drains storage; no available power turns off unsupported loads according to an agreed priority policy. Do not silently create energy.
-- Trade-off: produce oxygen now, reserve energy for darkness, or spend exposure/time maintaining generation.
+R, falling and teleporting reset the character position only. They do not erase dose, refill reserves, clean panels or advance the scenario. Scenario restart resets everything. Loss freezes the scenario immediately.
 
-**Settings category:** Energy / generation, storage, loads; Environment / clock, site, daylight and dust. Pending choices: fixed or adjustable panels, manual cleaning, accelerated clock, capacities and failure policy.
+## 2. Solar generation and battery charging
 
-## 4. Space weather event pipeline
+Use an explicit power/energy balance:
 
-**Purpose:** a reproducible external hazard that creates a reason to plan and seek protection.
+`PV power (W) = irradiance (W/m²) × array area (m²) × efficiency × orientation factor × dust transmission`
 
-Model these as distinct event types:
+`stored energy change (Wh) = accepted net power (W) × simulation seconds / 3600`, with separate charge and discharge efficiencies.
 
-- **Solar flare:** electromagnetic emission from the Sun. It can motivate a notification or a modeled communications disturbance. Do not automatically convert flare class into astronaut radiation dose or a surface explosion.
-- **Solar energetic particle event:** elevated energetic particle flux, with a separate onset, rise, peak and decay. Its relationship to a flare or CME is event-dependent; there is no universal fixed delay or guaranteed association.
-- **CME:** an optional associated record/context, not automatically a direct hit on Mars. An Earth-directed event is not necessarily Mars-directed.
+At night, generation is zero. During daylight, a documented representative Mars irradiance profile drives production. A representative profile is a simulation assumption, not a live NASA weather measurement. Support a selected site/season later without claiming a generic sine curve is a site-accurate forecast.
 
-Propose a seeded/scenario-driven event timeline first: warning, uncertain forecast, onset, peak, recovery and end. Forecast quality and warning lead time must be explicit simulation assumptions, not fictional NASA precision. Expose test controls to trigger/replay an event in Settings / Space weather. Never shake the camera merely because radiation arrives; radiation is not a physical blast wave.
+Account for controller rating, charge/discharge power limits, capacity and curtailed generation. Loads consume current generation before storage supplies a deficit. A full battery wastes excess generation. Storage never goes negative. Report generation, total load, charge/discharge and state of charge separately.
 
-For later NASA adapters, retain source event IDs, original timestamps, observation location, units, attribution and retrieval times. Historic playback retains original timestamps plus a separate simulation clock. DONKI event associations can supply context, but converting them to a Mars surface hazard needs an explicit transport/environment model. Mock and archived inputs remain available offline; stale/live/unavailable states must be distinct.
+Proposed initial balancing assumptions, all editable and explicitly not NASA hardware specifications:
 
-## 5. Radiation exposure and dosimetry
+| Parameter                                      | Proposed initial value |
+| ---------------------------------------------- | ---------------------- |
+| Array area / conversion efficiency             | 20 m² / 22%            |
+| Representative peak irradiance                 | 500 W/m²               |
+| Battery capacity / initial charge              | 12,000 Wh / 80%        |
+| Charge / discharge power limit                 | 2,500 W / 2,500 W      |
+| Charge / discharge efficiency                  | 95% / 95%              |
+| Background base load                           | 180 W                  |
+| Additional oxygen production load              | 500 W                  |
+| Additional occupied-shelter environmental load | 80 W                   |
 
-**Purpose:** make location, protection and time matter.
+This is a proposed starting point, not yet a verified seven-sol balance. Validate overnight storage and multi-sol survival with a reference control schedule before finalizing the preset. Electrical depletion should not automatically end a run if loads can be shed and oxygen remains; see pending power-policy choice below.
 
-- Separate baseline background exposure from the transient particle-event contribution.
-- Integrate exposure over simulation time, not rendering frames. A proposed calibrated model uses dose rate in mSv/hour and accumulated equivalent/effective dose in mSv, with the chosen quantity explicitly stated; these quantities cannot be substituted for absorbed dose in Gy without assumptions.
-- If no defensible calibration is selected, use labeled simulated exposure units instead. Do not invent a physical dose by multiplying an arbitrary flare severity.
-- Protection depends on whether the astronaut is outside, inside a habitat, or in a storm shelter. The initial approximation can use documented effective transmission factors. Material thickness alone is insufficient for general radiation transport: energy, composition, secondary particles and geometry matter.
-- Track total exposure, current rate, location and event contribution separately. Dose accumulates and does not instantly disappear when the event ends or the astronaut enters shelter.
-- Warning and operational exposure limits are scenario thresholds, not medical predictions or universal NASA astronaut limits. Health consequences, if wanted, require a separately approved abstraction.
+Existing normalized settings need an explicit versioned migration. Never reinterpret old battery units as Wh. Preserve original scenarios and exports, or clearly offer the new scenario preset instead of silently overwriting them.
 
-**Settings category:** Radiation / baseline, event profile, transmission, operational limits and display units. Pending: abstract versus calibrated physical model, threshold outcome and persistence between exercises.
+## 3. Hold-to-clean maintenance
 
-## 6. Shelter and competing electrical loads
+Place an accessible array with its own cleanliness state and collision-safe maintenance target. A proposed initial hold is **4 real seconds**, editable separately from simulation speed. Show a progress indicator and panel output before/after cleaning.
 
-**Purpose:** create a real decision instead of a cost-free safe option.
+Cleaning advances only while E is held, the array is the selected target, the player remains in range and the scenario is active. Release, moving out of range, pause, UI focus or changing targets cancels the hold; proposed initial behavior resets progress. Cleaning still consumes simulation time and incurs the location's radiation exposure. No repeated keydown spam or instant E press may complete it.
 
-- Proposed first implementation requires walking into a defined shelter volume. Entry and exit change the exposure model; walls or a roof are not protection unless registered as a protective zone.
-- Shelter environmental systems consume an explicit electrical load. Establish what is powered (fans/filtration/thermal control), instead of claiming electricity itself blocks radiation. Passive shielding remains protective during an outage.
-- Oxygen supply remains linked to the outpost reserve initially. A separate suit tank/refill model is optional and must not be mixed into the outpost model implicitly.
-- During low energy, the operator may choose oxygen production, shelter environmental support or nonessential equipment under an agreed policy. Basic electrical protection and minimum survival loads need defined behavior.
-- A power cut does not open an oxygen leak or instantly kill the player unless that behavior is explicitly modeled and approved.
+Propose a deterministic dust-loss model: initial dust transmission 0.90; decrease by 0.04 per sol, floored at 0.30; a completed clean restores it to 1.00. These are balance assumptions, not measured Mars deposition rates. Do not infer dust from DONKI flare data. The rate, floor, initial state and cleaning effectiveness are editable. Approved update: panels track the sun automatically within adjustable tilt limits. A fixed-orientation comparison mode and tracker power draw are exposed in settings.
 
-**Settings category:** Shelter / protected volumes, passive transmission and environmental loads; Power allocation / priorities and cutoffs.
+## 4. Oxygen and base operation
 
-## 7. Optional mechanics for a later increment
+Keep reserve consumption distinct from generator production and from power consumption. Only a powered oxygen unit produces oxygen. Excess production at capacity is wasted, while a running unit continues drawing power unless automatic cutoff is explicitly enabled.
 
-- **Suit oxygen and refill:** a distinct portable tank, refill transfer and supply limits. Adds EVA duration decisions; requires suit/outpost accounting and clear reset rules.
-- **Panel dust and maintenance:** generation losses accumulate; cleaning restores measured transmission while costing time outside. Maintenance must not grant arbitrary electrical energy directly.
-- **Equipment degradation and repair:** specific failure modes and repair costs; seeded failures for repeatability. Repair consumables need an inventory decision.
-- **Communications disruption:** delayed or unavailable telemetry with timestamps and a last-known indicator. A flare-driven effect requires a selected radio propagation model; do not pretend to predict Mars communications from an Earth event flag.
+Recommend using **kg of oxygen** for the expanded scenario, with an explicitly selected production process and editable production/consumption rates. A MOXIE-style CO₂ processor and a water-electrolysis plant have different feedstock and energy assumptions; the model must identify which is represented. Do not convert current training units to kg or choose rates as if NASA measured the proposed hardware. Feedstock may remain assumed available, if approved. Numerical mass/rate defaults will be balanced with the selected process and occupancy.
 
-Recommend deferring repairs, suit supplies and communications until the energy/event/shelter loop is working. These are proposals, not silently added scope.
+Keep outpost oxygen separate from suit oxygen. Suit capacity and refill are deferred unless requested. Proposed zero-oxygen behavior is immediate scenario loss; power loss alone first disables unsupported production. A control panel should report why equipment is not running.
 
-## Proposed implementation batches
+## 5. Solar flare and energetic-particle scenario
 
-1. Current UI/camera work and regression checks.
-2. Approved generation/storage model, daylight, solar panels, energy telemetry and revised training balance. Test charging before adding hazards.
-3. Approved particle-event timeline, dose integration and shelter, sharing one simulation clock with energy and oxygen. Pause/hidden-tab rules apply to every subsystem.
-4. A configurable 5–10 minute scenario combining sunlight, oxygen production, maintenance if approved, one hazard and a final operational summary.
-5. NASA adapter only after selecting the specific dataset and defining what it can scientifically support. No API integration is implied by simulated event support.
+Represent electromagnetic flare notifications separately from a solar energetic particle (SEP) exposure profile. They may be associated historically, but a flare class is not a Mars surface dose and an Earth observation is not automatically a Mars observation. A CME is contextual unless a supported arrival/transport model is selected.
 
-Each batch should have tests and a working Pages build. Avoid changing movement balance while the team evaluates it.
+Recommend a reproducible archived case with a warning and particle event during the seven-sol run. No physical blast or automatic camera shake accompanies radiation. Keep event trigger, onset, rise, peak, decay and warning lead time editable; preserve scientific event timestamps separately from the accelerated scenario placement.
 
-## Verification requirements
+NASA/JPL documents a Curiosity RAD dose of **8,100 µGy = 8.1 mGy** in the May 20, 2024 event. That can anchor an event's integrated dose. The article does not give a continuous rate curve: if using an adjustable reconstructed curve, normalize its integral to the cited dose and label it **reconstructed from a reported event total**. Confirm whether the selected reported quantity includes background before combining it with baseline to avoid double counting. A processed RAD time series is preferable when its products, quality flags and units have been verified.
 
-- Energy conservation with no generation, surplus generation, full storage, efficiency loss and charge/discharge limits. Test daylight/night boundaries and parameter changes.
-- Equivalent results under different rendering schedules and simulation speed multipliers; isolate wall time, simulation time and historical event time.
-- No instantaneous radiation-dose jump at an event boundary; integrate profiles and transitions consistently. Dose remains monotonic with nonnegative exposure.
-- Shelter reduces the selected exposure quantity and its load appears in the energy balance. Passive protection survives loss of power.
-- Seeded events replay identically. No event or missing API response changes provenance labels silently.
-- Resource reset, player respawn, pause/resume, exercise end and scenario reload have explicit consistent effects across all systems.
-- Settings remain in the top-right panel, are validated and migrate older exports. Operational controls remain distinguishable from developer overrides.
-- Browser tests cover charging, generator loads, event onset, walking into shelter, warnings and outcome. Existing keyboard and camera checks continue passing.
+Changing event severity away from the sourced total creates a modified scenario; show the multiplier and retain the reference separately. Do not silently boost radiation to make the game harder.
 
-## Decisions requested before implementing batches 2–4
+## 6. Radiation dose and immediate loss
 
-1. Energy units: retain explicitly normalized units first, or introduce calibrated W/Wh and a selected oxygen unit/model now?
-2. Generation: fixed solar panels or adjustable orientation? Manual cleaning via E, automatic cleaning, or no dust yet?
-3. Environment: chosen Mars site/latitude and season, or a labeled representative daylight profile? Accelerated sol/day cycle or short fixed-day scenario? Desired speed multiplier?
-4. Storage: nominal capacity, initial charge, panel output and charge/discharge limits, or should I propose a balanced editable preset?
-5. Power loss: automatic load shedding, player allocation, or immediate exercise failure? Which loads have priority?
-6. Events: deterministic training sequence, seeded variation, or manual debug triggers only? Should forecasts be reliable or explicitly uncertain?
-7. Radiation: fictional risk units initially, or a physically calibrated model supported by a selected reference dataset? What happens at the operational limit?
-8. Shelter: walk inside or interact to enter? Should it have a running environmental load? How should depleted oxygen/power affect the exercise?
-9. Other systems: suit tank/refill, dust maintenance, equipment repair, communications—choose what belongs now versus later.
-10. Scenario: duration and success goal (survive the interval, maintain minimum reserves, complete a task, or free simulation)? Should accumulated dose persist across respawns/exercises?
-11. Camera: landing shake only, running shake too, or preview only? Preferred follow delay and shake strength can be supplied later; all remain editable.
-12. Detail level: engineering dashboard with numeric rates/units and charts, or compact telemetry with an expandable detailed view? Recommendation: both, with compact default HUD and detailed top-right diagnostics.
+Proposed primary display: **absorbed-dose reference/proxy in mGy**, rate in mGy/hour. This matches a verified NASA/JPL event reference. Do not relabel mGy as mSv: equivalent/effective dose requires additional radiation-quality, tissue and geometry assumptions. A rover detector reference is not an individual astronaut medical assessment.
 
-No response is treated as approval. I can recommend a coherent preset after these choices; the team need not supply every numeric value manually.
+Integrate rates over simulation time: `dose increment (mGy) = dose rate (mGy/hour) × simulation seconds / 3600`. The same accelerated clock used for the seven-sol scenario must drive dose. Exposure persists after an event and while sheltered; shielding changes the rate, not accumulated history.
+
+Use baseline plus the appropriately separated event contribution, with provenance for each. Select and document a valid baseline reference and its averaging interval before shipping the physical preset. The RAD PDS archive examined during planning contains RDR products described as Level 1A mirroring raw instrument data; finding an archive does not establish that a directly usable human-dose time series was extracted. Do not invent a quality factor or baseline to fill that gap. A documented published baseline is an acceptable alternative to raw-product processing.
+
+When `accumulated dose >= configured dose limit`, immediately mark the run lost and stop simulation. Present this as an **operational exposure limit exceeded**, not a claim that this exact dose instantly kills a person. The NASA/JPL article explicitly describes the 8.1 mGy event as not deadly. The loss limit is a game/mission rule, editable and labeled separately from measured data.
+
+The default limit is pending baseline/model selection and user preference. It should make shelter relevant without altering the reference dose or implying a NASA medical standard.
+
+## 7. Shelter and loss rules
+
+Recommend entering shelter by physically walking into a registered protected volume. Apply explicitly documented scenario transmission factors for baseline and SEP components separately. A provisional simplification may use 0.70 baseline and 0.20 event transmission, clearly labeled model assumptions rather than measured material performance. Later replace them with a defensible shielding model.
+
+Passive shielding remains effective without power. The 80 W proposed load powers environmental support, not the shielding itself. A power deficit must not remove passive protection. Whether environmental failure creates a separate loss condition requires the selected power policy.
+
+Proposed outcomes: success after all configured sols; immediate loss on dose limit or oxygen depletion. Battery empty causes a power deficit and load shedding rather than an unexplained instant death. The first implementation should visibly distinguish equipment off, unavailable power and missing supply.
+
+## 8. NASA integration and documentation
+
+Detailed research results and intended API use are in `NASA_DATA_USAGE.md`. No personal key has been used or stored during planning. The public DEMO_KEY successfully verified the DONKI SEP endpoint; the Curiosity archive and NASA/JPL reference are publicly accessible without that key.
+
+Recommended delivery: a GitHub Actions data-refresh step fetches selected DONKI records using a GitHub Actions secret named `NASA_API_KEY`, checks response structure, and exports a sanitized attributed JSON dataset into the Pages build. The published game can run offline after loading and needs no key. Keys do not enter source, exports, request logs or the browser bundle. API fetch failures keep a known valid archived dataset and clearly show its date/status; they must not silently substitute fictional NASA data.
+
+The supplied key would be used only after it is configured securely and the implementation is approved. Saving its name in a plan does not configure it. Do not paste it again; the GitHub Actions secret can be set in repository settings. Public NASA data and a public personal API credential are different things: exposing the key lets others consume its quota.
+
+DONKI supplies event metadata and associations, not calibrated Mars surface radiation. RAD measurements or a documented NASA reference anchor dose. Record source URLs, IDs, observations, units, transformations, uncertainties and scenario scaling. Mark archived and reconstructed inputs individually. Provide an in-game Sources view and a short judge-facing methods document.
+
+## 9. Settings and camera
+
+Everything stays in the top-right panel, including:
+
+- Scenario: sol count, start time, sol duration/simulation speed, seed and replay.
+- Solar: area, efficiency, daylight profile, limits and dust transmission.
+- Maintenance: interact binding, real-time hold duration, range, cancellation/progress policy and cleaning effectiveness.
+- Battery/loads: capacity, initial energy, efficiencies, limits and priorities.
+- Oxygen: mass capacity, consumption, production and equipment draw.
+- Radiation: source preset, baseline, rate profile, dose limit and exposure warnings.
+- Shelter: bounds, transmission and environmental load.
+- Camera: framing, follow responsiveness, delay, look-target offset, shake enable/strength/frequency/duration and triggers. Recommend separate landing and running shake toggles, a master disable and preview. Running shake remains off initially.
+- Rendering, diagnostics, source information, presets and versioned JSON import/export.
+
+Structural/model changes apply via explicit scenario restart; safe visual settings apply live. Define numeric limits and units on every control. Technical advanced settings can be nested, but no second tuning panel is introduced.
+
+## 10. Implementation order and acceptance
+
+1. Versioned scenario configuration, accelerated sol clock and existing-settings compatibility.
+2. Day/night rendering, energy storage, generation, dust and cancellable hold-to-clean.
+3. Chosen oxygen process, physical units, equipment supply checks and power policy.
+4. NASA data adapter/archived fixtures, provenance and a validated radiation reference.
+5. SEP scenario, dose integration, shelter, immediate loss and seven-sol completion.
+6. Unified controls, compact HUD, data/source explanation, automated checks and Pages deployment.
+
+Required checks: daylight/night boundaries; energy conservation and efficiency losses; capacity and power limits; realistic feasible reference schedule across seven sols; hold completion/cancellation without synthetic progress while paused; source validation; dose-unit conversions; reconstructed profile integral; background/event separation; shelter factors; dose-limit crossing and ties with completion; no erasing exposure on respawn; equivalent results across frame schedules; old-settings migration; keyboard/UI and camera regressions; CI and deployed-site checks. Document actual hardware testing separately from headless browser tests.
+
+## Remaining choices for approval
+
+1. **Time:** interpret seven days as seven Mars sols? Is 180 real seconds per sol (21 minutes total) a suitable editable starting preset?
+2. **Power policy:** automatic shedding with oxygen production below essential base loads, manual allocation, or immediate failure at empty battery? Recommendation: automatic, with visible priorities.
+3. **Oxygen process:** CO₂ processing on Mars, water electrolysis, or keep the existing explicitly abstract generator temporarily? Recommendation: CO₂ processing with documented assumptions; no water inventory in this increment.
+4. **Shelter:** physically walk inside as proposed? Any desire for a door/interaction instead?
+5. **Radiation limit:** accept mGy-based reference exposure and an editable operational loss limit, or do you specifically need mSv and the additional model work? I recommend mGy first. The default limit will be proposed with the selected baseline; it will not be called lethal.
+6. **Event delivery:** historical event reconstruction in a repeatable run as proposed, or live event context? Recommendation: archived, repeatable scenario first.
+7. **Scope:** are fixed-orientation arrays and no suit/refill, repairs, or communications mechanics acceptable for this increment? These additions can follow after the seven-sol loop is stable.
+
+Approve or amend this plan before gameplay implementation. Existing camera/settings work remains available for testing.
+
+## Implementation balance update
+
+The tested starting preset uses a 60 m² tracking array, 24 kWh storage and 1.5 kW oxygen plant (0.05 kg/hour) so that a seven-sol reference strategy is feasible. The earlier table was tentative; these are explicitly editable hardware assumptions. The event dose is anchored to 8.1 mGy, the primary exposure display is mGy, and the operational default limit is 5 mGy. No personal API key is embedded or used; DONKI context refresh currently uses the public DEMO_KEY unless a GitHub Actions secret is supplied.

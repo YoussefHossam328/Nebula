@@ -2,6 +2,8 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 // Paths are relative to public/. Keep collision independent of the model.
 export const assets = {
+  solarPanel: { path: "", scale: 1, yaw: 0, offset: [0, 0, 0] },
+  shelter: { path: "", scale: 1, yaw: 0, offset: [0, 0, 0] },
   astronaut: {
     path: "",
     scale: 1,
