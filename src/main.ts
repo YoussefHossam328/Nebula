@@ -51,6 +51,7 @@ async function start() {
   const world = new RAPIER.World({ x: 0, y: 0, z: 0 });
   const area = createWorld(scene, world);
   const baseScene = baseVisuals(scene, world);
+  await baseScene.solarReady;
   const player = new Character(world, s);
   const visual = await astronaut();
   scene.add(visual.root);
@@ -103,6 +104,7 @@ async function start() {
     (c) => baseScene.configure(c),
   );
   baseScene.configure(base.sim.config);
+  baseScene.update(0, base.sim.config, base.sim.dust);
   settingsPanel
     .addFolder("Audio · preview")
     .add({ previewAudio: () => audio.preview() }, "previewAudio")
@@ -293,6 +295,7 @@ async function start() {
         model: visual.info,
         audio: audio.status,
         station: stationState,
+        solar: baseScene.solarInfo,
         horizontalSpeed: Math.hypot(player.vx, player.vz),
         settings: s,
         base: base.active

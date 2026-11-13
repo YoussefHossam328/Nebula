@@ -165,6 +165,7 @@ export function baseUI(
         "dustFloor",
         "cleanSeconds",
         "cleanRestore",
+        "cleanVisualThreshold",
         "interactionRange",
       ],
     ],

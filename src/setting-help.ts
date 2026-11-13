@@ -125,6 +125,8 @@ export const baseHelp: Record<Exclude<keyof BaseConfig, "version">, string> = {
   dustFloor: "Lowest dust transmission allowed by the deposition model.",
   cleanSeconds:
     "Real seconds to hold E near the array. Releasing, leaving range or pausing cancels progress.",
+  cleanVisualThreshold:
+    "Minimum dust transmission for the artist’s clean material; below it the dirty material is shown. Both textures use the same UV coordinates.",
   cleanRestore: "Dust transmission after a complete cleaning, 0–1.",
   interactionRange:
     "Maximum distance in metres for base oxygen controls and panel cleaning.",

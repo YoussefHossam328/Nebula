@@ -30,6 +30,7 @@ export const baseDefaults = {
   dustFloor: 0.3,
   cleanSeconds: 4,
   cleanRestore: 1,
+  cleanVisualThreshold: 0.98,
   interactionRange: 2.5,
   baselineMGyPerDay: 0.21,
   eventDoseMGy: 8.1,
@@ -80,6 +81,7 @@ export const limits: Record<keyof BaseConfig, [number, number, number]> = {
   dustFloor: [0, 1, 0.01],
   cleanSeconds: [0.1, 60, 0.1],
   cleanRestore: [0, 1, 0.01],
+  cleanVisualThreshold: [0, 1, 0.01],
   interactionRange: [0.5, 6, 0.1],
   baselineMGyPerDay: [0, 10, 0.001],
   eventDoseMGy: [0, 1000, 0.1],
@@ -106,7 +108,12 @@ export function validateBase(input: unknown): BaseConfig {
     const v = (input as Record<string, unknown>)[k];
     if (
       v === undefined &&
-      ["stressEnabled", "stressPerMGy", "stressRecoveryPerHour"].includes(k)
+      [
+        "stressEnabled",
+        "stressPerMGy",
+        "stressRecoveryPerHour",
+        "cleanVisualThreshold",
+      ].includes(k)
     )
       continue;
     if (typeof v !== typeof s[k]) throw Error(`Invalid ${k}`);

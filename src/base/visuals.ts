@@ -3,6 +3,7 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { assets } from "../assets";
 import RAPIER from "@dimforge/rapier3d-compat";
 import type { BaseConfig } from "./config";
+import { loadSolarModel } from "./solar-model";
 import { sunlight } from "./model";
 export const ARRAY_POSITION = { x: -6, y: 0, z: 2 };
 export function baseVisuals(scene: THREE.Scene, world: RAPIER.World) {
@@ -33,9 +34,22 @@ export function baseVisuals(scene: THREE.Scene, world: RAPIER.World) {
   );
   mast.position.set(-6, 0.9, 2);
   root.add(mast);
-  world.createCollider(
+  const mastCollider = world.createCollider(
     RAPIER.ColliderDesc.cylinder(0.9, 0.2).setTranslation(-6, 0.9, 2),
   );
+  let solarModel: Awaited<ReturnType<typeof loadSolarModel>> | undefined;
+  let solarFailed = false;
+  const solarReady = loadSolarModel(root, ARRAY_POSITION)
+    .then((model) => {
+      solarModel = model;
+      mastCollider.setShape(new RAPIER.Cylinder(0.9, model.info.scale));
+      pivot.visible = false;
+      mast.visible = false;
+    })
+    .catch(() => {
+      solarFailed = true;
+      console.warn("Solar GLB unavailable; retaining placeholder.");
+    });
   const shelter = new THREE.Group();
   root.add(shelter);
   const mat = new THREE.MeshStandardMaterial({
@@ -120,7 +134,6 @@ export function baseVisuals(scene: THREE.Scene, world: RAPIER.World) {
   label("HOLD E / CLEAN ARRAY", -6, 3.6, 2);
   const shelterLabel = label("STORM SHELTER · WALK IN", 6, 3.6, 5);
   for (const [asset, parent, hide] of [
-    [assets.solarPanel, pivot, [...pivot.children]],
     [assets.shelter, root, pieces],
   ] as const) {
     if (asset.path)
@@ -146,9 +159,20 @@ export function baseVisuals(scene: THREE.Scene, world: RAPIER.World) {
   }
   return {
     configure,
+    solarReady,
+    get solarInfo() {
+      return (
+        solarModel?.info ?? {
+          loaded: false,
+          failed: solarFailed,
+          hasCleanDirtyStates: false,
+        }
+      );
+    },
     update(time: number, c: BaseConfig, dust: number) {
       configure(c);
       const light = sunlight(time, c);
+      solarModel?.update(light.normal, dust, c.cleanVisualThreshold);
       pivot.quaternion.setFromUnitVectors(
         new THREE.Vector3(0, 1, 0),
         new THREE.Vector3(light.normal.x, light.normal.y, light.normal.z),

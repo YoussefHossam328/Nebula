@@ -73,6 +73,9 @@ test("walks to array, cancels a hold, cleans while held, and preserves exposure 
     })
     .toBeGreaterThan(0);
   await page.keyboard.up("KeyE");
+  await expect
+    .poll(() => page.evaluate(() => (window as any).nebula.solar.visualState))
+    .toBe("clean");
   const dose = await page.evaluate(() => (window as any).nebula.base.dose);
   await page.keyboard.press("KeyR");
   await expect

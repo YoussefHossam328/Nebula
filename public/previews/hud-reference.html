@@ -1,0 +1,1405 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nebula · Red Horizon — Icons / Open HUD</title>
+    <style>
+      :root {
+        --pill-bg: rgba(24, 21, 20, 0.84);
+        --pill-solid: #191615;
+        --stroke: rgba(255, 248, 240, 0.16);
+        --cream: #faf7f2;
+        --stone: #b8afa6;
+        --sage: #34d399;
+        --ochre: #fbbf24;
+        --terracotta: #fb923c;
+        --rose: #fb7185;
+        --sky: #38bdf8;
+        --round: "Segoe UI", system-ui, -apple-system, sans-serif;
+        --num: "Cascadia Mono", "Consolas", monospace;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: var(--round);
+        background: #120e0c;
+        color: var(--cream);
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
+        user-select: none;
+      }
+      button:focus-visible,
+      input:focus-visible,
+      select:focus-visible {
+        outline: 2px solid var(--sage);
+        outline-offset: 2px;
+      }
+
+      .viewport {
+        position: relative;
+        width: 100vw;
+        height: 100vh;
+        background: linear-gradient(
+          180deg,
+          #6e301c 0%,
+          #b85633 48%,
+          #d67852 100%
+        );
+        transition: background 0.45s ease;
+      }
+      .viewport.night {
+        background: linear-gradient(
+          180deg,
+          #090d17 0%,
+          #162036 55%,
+          #242b3d 100%
+        );
+      }
+      .viewport.storm {
+        background: linear-gradient(
+          180deg,
+          #5c1e13 0%,
+          #912f15 50%,
+          #ab3d1a 100%
+        );
+      }
+
+      /* TOP-LEFT MINIMAL SOL & OBJECTIVE PILL */
+      .tl-pill {
+        position: absolute;
+        top: 14px;
+        left: 16px;
+        z-index: 40;
+        background: var(--pill-bg);
+        border: 1px solid var(--stroke);
+        border-radius: 22px;
+        padding: 7px 15px;
+        backdrop-filter: blur(12px);
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+      }
+      .sol-badge {
+        background: var(--ochre);
+        color: #1c1917;
+        font-weight: 800;
+        font-size: 11px;
+        padding: 4px 10px;
+        border-radius: 999px;
+      }
+
+      /* TOP-CENTER SPACE WEATHER & SCIENTIFIC DATA PILL */
+      .tc-stack {
+        position: absolute;
+        top: 14px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 40;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 5px;
+      }
+      .weather-capsule {
+        background: var(--pill-bg);
+        border: 1px solid var(--stroke);
+        border-radius: 999px;
+        padding: 6px 15px;
+        font-size: 12px;
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        backdrop-filter: blur(12px);
+      }
+      .weather-capsule.warn {
+        background: rgba(124, 45, 18, 0.92);
+        border-color: var(--terracotta);
+      }
+      .weather-capsule.active {
+        background: rgba(136, 19, 55, 0.94);
+        border-color: var(--rose);
+      }
+      .weather-capsule.recovery {
+        background: rgba(6, 78, 59, 0.92);
+        border-color: var(--sage);
+      }
+
+      .data-pill {
+        background: rgba(24, 21, 20, 0.76);
+        border: 1px solid var(--stroke);
+        color: var(--stone);
+        font-size: 10px;
+        padding: 2px 11px;
+        border-radius: 999px;
+        cursor: pointer;
+      }
+
+      /* TOP-RIGHT PILLS & SINGLE UNIFIED DEVELOPER DRAWER */
+      .tr-pills {
+        position: absolute;
+        top: 14px;
+        right: 16px;
+        z-index: 40;
+        display: flex;
+        gap: 7px;
+      }
+      .cap-btn {
+        background: var(--pill-bg);
+        border: 1px solid var(--stroke);
+        color: var(--cream);
+        padding: 7px 12px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        backdrop-filter: blur(12px);
+      }
+      .dev-drawer {
+        position: absolute;
+        top: 42px;
+        right: 0;
+        width: 395px;
+        max-height: calc(100vh - 120px);
+        background: var(--pill-solid);
+        border: 1px solid var(--ochre);
+        border-radius: 16px;
+        display: none;
+        flex-direction: column;
+        overflow: hidden;
+        box-shadow: 0 22px 48px rgba(0, 0, 0, 0.78);
+      }
+      .dev-drawer.open {
+        display: flex;
+      }
+      .dev-scroll {
+        padding: 10px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      details.m-cat {
+        background: rgba(255, 255, 255, 0.04);
+        border-radius: 10px;
+        padding: 6px 10px;
+      }
+      details.m-cat summary {
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      .m-param {
+        margin-top: 6px;
+        padding-top: 5px;
+        border-top: 1px dashed rgba(255, 255, 255, 0.12);
+        display: grid;
+        grid-template-columns: 1fr auto;
+        font-size: 11px;
+      }
+      .m-desc {
+        grid-column: 1 / -1;
+        font-size: 10px;
+        color: var(--stone);
+      }
+
+      /* WORLD-SPACE INTERACTION PIN */
+      .spatial-pin {
+        position: absolute;
+        left: 51%;
+        top: 53%;
+        transform: translate(-50%, -115%);
+        z-index: 35;
+        background: var(--pill-bg);
+        border: 1.5px solid var(--ochre);
+        border-radius: 999px;
+        padding: 7px 16px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        box-shadow: 0 10px 26px rgba(0, 0, 0, 0.48);
+        cursor: pointer;
+      }
+      .pin-key {
+        background: var(--ochre);
+        color: #1c1917;
+        font-weight: 800;
+        font-size: 11px;
+        padding: 3px 8px;
+        border-radius: 999px;
+      }
+
+      /* EXPANDABLE SYSTEM INSPECTOR */
+      .inspector-card {
+        position: absolute;
+        bottom: 124px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 45;
+        background: var(--pill-solid);
+        border: 1px solid var(--stroke);
+        border-radius: 16px;
+        padding: 13px 16px;
+        width: 500px;
+        max-width: 94vw;
+        display: none;
+        box-shadow: 0 16px 36px rgba(0, 0, 0, 0.68);
+      }
+      .inspector-card.open {
+        display: block;
+      }
+
+      /* BOTTOM-CENTER UNIFIED SURVIVAL CAPSULE */
+      .survival-dock {
+        position: absolute;
+        bottom: 54px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 40;
+        background: var(--pill-bg);
+        border: 1px solid var(--stroke);
+        border-radius: 22px;
+        padding: 9px 16px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        backdrop-filter: blur(14px);
+        box-shadow: 0 14px 34px rgba(0, 0, 0, 0.52);
+        max-width: 96vw;
+        flex-wrap: wrap;
+      }
+      .seg {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        min-width: 140px;
+      }
+      .seg-top {
+        display: flex;
+        justify-content: space-between;
+        font-size: 10px;
+        color: var(--stone);
+      }
+      .seg-num {
+        font-family: var(--num);
+        font-size: 12px;
+        font-weight: 700;
+      }
+      .bar-bg {
+        height: 6px;
+        background: rgba(255, 255, 255, 0.12);
+        border-radius: 999px;
+        overflow: hidden;
+      }
+      .bar-fg {
+        height: 100%;
+        border-radius: 999px;
+        transition: width 0.3s ease;
+      }
+      .v-sep {
+        width: 1px;
+        height: 34px;
+        background: var(--stroke);
+      }
+
+      /* COLLAPSIBLE CONTROLS PILL */
+      .ctrl-pop {
+        position: absolute;
+        top: 56px;
+        right: 16px;
+        z-index: 45;
+        background: var(--pill-solid);
+        border: 1px solid var(--stroke);
+        border-radius: 14px;
+        padding: 10px 14px;
+        font-size: 11px;
+        display: none;
+      }
+      .ctrl-pop.open {
+        display: block;
+      }
+
+      .modal-bg {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.78);
+        z-index: 500;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+      }
+      .modal-bg.open {
+        display: flex;
+      }
+      .modal-card {
+        background: var(--pill-solid);
+        border: 1px solid var(--stroke);
+        border-radius: 18px;
+        padding: 20px;
+        max-width: 500px;
+        width: 100%;
+      }
+
+      .preview-bar {
+        position: fixed;
+        bottom: 8px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 900;
+        background: rgba(18, 14, 12, 0.95);
+        border: 1px solid var(--ochre);
+        border-radius: 999px;
+        padding: 4px 12px;
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        flex-wrap: wrap;
+        max-width: 96vw;
+      }
+      .m-btn {
+        background: transparent;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        color: var(--cream);
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 11px;
+        cursor: pointer;
+      }
+      .m-btn.active {
+        background: var(--ochre);
+        color: #1c1917;
+        font-weight: 700;
+      }
+
+      /* Revised reference: inline vector icons; no shared bottom panel. */
+      .icon-library {
+        position: absolute;
+        width: 0;
+        height: 0;
+        overflow: hidden;
+        pointer-events: none;
+      }
+      .ui-icon {
+        width: 16px;
+        height: 16px;
+        display: inline-block;
+        vertical-align: -3px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.8;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        flex-shrink: 0;
+        margin-right: 3px;
+        pointer-events: none;
+      }
+      .survival-dock {
+        background: transparent;
+        border: 0;
+        border-radius: 0;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        box-shadow: none;
+        gap: 22px;
+        padding: 10px 16px;
+        text-shadow:
+          0 1px 2px #17110d,
+          0 0 5px #17110ddd;
+      }
+      .survival-dock .seg-top {
+        color: #fff4e7;
+        gap: 10px;
+      }
+      .survival-dock .seg-num {
+        font-size: 14px;
+        color: #fffaf3;
+      }
+      .survival-dock .bar-bg {
+        background: #1b1614b3;
+        height: 5px;
+        box-shadow: 0 1px 2px #0009;
+      }
+      .survival-dock .v-sep {
+        background: #fff3d759;
+        box-shadow: 0 1px 2px #0008;
+      }
+      .survival-dock .cap-btn {
+        background: transparent;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        text-shadow: inherit;
+      }
+      .survival-dock .ui-icon {
+        filter: drop-shadow(0 1px 2px #0009);
+      }
+      .cap-btn .ui-icon {
+        width: 15px;
+        height: 15px;
+      }
+      .preview-bar {
+        border-radius: 14px;
+        justify-content: center;
+      }
+      @media (max-width: 1100px) {
+        .tc-stack {
+          top: 76px;
+        }
+        .survival-dock {
+          width: max-content;
+          max-width: 96vw;
+          justify-content: center;
+          gap: 14px;
+        }
+        .spatial-pin {
+          top: 48%;
+        }
+        .tl-pill {
+          max-width: 46vw;
+        }
+      }
+      @media (max-width: 650px) {
+        .tl-pill {
+          left: 10px;
+          right: 10px;
+          max-width: none;
+          top: 10px;
+          justify-content: center;
+        }
+        .tr-pills {
+          top: 74px;
+          right: 10px;
+          left: 10px;
+          justify-content: center;
+          flex-wrap: wrap;
+        }
+        .tc-stack {
+          top: 124px;
+          width: 96vw;
+        }
+        .weather-capsule {
+          font-size: 10px;
+          max-width: 96vw;
+        }
+        .data-pill {
+          font-size: 9px;
+          max-width: 94vw;
+        }
+        .dev-drawer {
+          position: fixed;
+          right: 8px;
+          top: 116px;
+          width: min(395px, calc(100vw - 16px));
+          max-height: calc(100dvh - 190px);
+        }
+        .survival-dock {
+          bottom: 108px;
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          width: 96vw;
+          gap: 12px 18px;
+        }
+        .survival-dock .seg {
+          min-width: 0 !important;
+        }
+        .survival-dock .v-sep {
+          display: none;
+        }
+        .survival-dock .seg-top {
+          font-size: 9px;
+          flex-wrap: wrap;
+          gap: 2px;
+        }
+        .survival-dock .seg-num {
+          font-size: 12px;
+        }
+        .survival-dock > .cap-btn {
+          grid-column: 1/-1;
+          justify-self: center;
+        }
+        .preview-bar {
+          width: 96vw;
+          gap: 4px;
+          padding: 7px;
+        }
+        .preview-bar .m-btn {
+          font-size: 10px;
+          padding: 4px 7px;
+        }
+        .spatial-pin {
+          top: 45%;
+          width: max-content;
+          max-width: 94vw;
+        }
+        .inspector-card {
+          bottom: 300px;
+        }
+        .ctrl-pop {
+          top: 116px;
+          right: 10px;
+        }
+        .modal-card {
+          max-height: 90dvh;
+          overflow: auto;
+        }
+      }
+      /* Keep the desktop dock on one open row; wrap only on smaller screens. */
+      .survival-dock {
+        width: max-content;
+        flex-wrap: nowrap;
+      }
+      .preview-bar {
+        width: max-content;
+      }
+      @media (max-width: 1100px) {
+        .survival-dock {
+          flex-wrap: wrap;
+        }
+      }
+      @media (max-width: 650px) {
+        .survival-dock,
+        .preview-bar {
+          width: 96vw;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      class="icon-library"
+      aria-hidden="true"
+    >
+      <defs>
+        <symbol id="ui-sun" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="4" />
+          <path
+            d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"
+          />
+        </symbol>
+        <symbol id="ui-moon" viewBox="0 0 24 24">
+          <path d="M20 14A8.5 8.5 0 0 1 10 4a8.5 8.5 0 1 0 10 10Z" />
+        </symbol>
+        <symbol id="ui-keyboard" viewBox="0 0 24 24">
+          <rect x="2" y="5" width="20" height="14" rx="3" />
+          <path
+            d="M6 9h.01M10 9h.01M14 9h.01M18 9h.01M6 12h.01M10 12h.01M14 12h.01M18 12h.01M7 16h10"
+          />
+        </symbol>
+        <symbol id="ui-science" viewBox="0 0 24 24">
+          <path
+            d="M9 3h6m-5 0v6L4 19a1.5 1.5 0 0 0 1.3 2h13.4a1.5 1.5 0 0 0 1.3-2L14 9V3M7 14h10"
+          />
+        </symbol>
+        <symbol id="ui-pause" viewBox="0 0 24 24">
+          <path d="M8 5v14M16 5v14" />
+        </symbol>
+        <symbol id="ui-gear" viewBox="0 0 24 24">
+          <path
+            d="m9 3-1 3-3 1v3l-2 2 2 2v3l3 1 1 3h6l1-3 3-1v-3l2-2-2-2V7l-3-1-1-3Z"
+          />
+          <circle cx="12" cy="12" r="3" />
+        </symbol>
+        <symbol id="ui-close" viewBox="0 0 24 24">
+          <path d="m6 6 12 12M18 6 6 18" />
+        </symbol>
+        <symbol id="ui-play" viewBox="0 0 24 24">
+          <path d="m8 4 12 8-12 8Z" />
+        </symbol>
+        <symbol id="ui-battery" viewBox="0 0 24 24">
+          <rect x="2" y="6" width="18" height="12" rx="2" />
+          <path d="M22 10v4M7 9v6m4-6v6m4-6v6" />
+        </symbol>
+        <symbol id="ui-oxygen" viewBox="0 0 24 24">
+          <circle cx="7" cy="15" r="4" />
+          <circle cx="16" cy="7" r="4" />
+          <circle cx="19" cy="18" r="2" />
+          <path d="m10 12 3-2" />
+        </symbol>
+        <symbol id="ui-warning" viewBox="0 0 24 24">
+          <path
+            d="M10.3 3.8a2 2 0 0 1 3.4 0l8 14a2 2 0 0 1-1.7 3H4a2 2 0 0 1-1.7-3Z"
+          />
+          <path d="M12 9v4m0 4h.01" />
+        </symbol>
+        <symbol id="ui-shield" viewBox="0 0 24 24">
+          <path d="M12 2 3 6v6c0 5 9 10 9 10s9-5 9-10V6Z" />
+          <path d="m8 12 3 3 5-6" />
+        </symbol>
+        <symbol id="ui-bell" viewBox="0 0 24 24">
+          <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" />
+        </symbol>
+        <symbol id="ui-info" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="9" />
+          <path d="M12 11v6m0-10h.01" />
+        </symbol>
+        <symbol id="ui-check" viewBox="0 0 24 24">
+          <path d="m5 12 4 4L19 6" />
+        </symbol>
+        <symbol id="ui-down" viewBox="0 0 24 24">
+          <path d="m6 9 6 6 6-6" />
+        </symbol>
+        <symbol id="ui-up" viewBox="0 0 24 24">
+          <path d="m6 15 6-6 6 6" />
+        </symbol>
+      </defs>
+    </svg>
+
+    <div class="viewport" id="mVp">
+      <!-- ISOMETRIC MARS WORLD -->
+      <svg
+        width="100%"
+        height="100%"
+        viewBox="0 0 1440 900"
+        preserveAspectRatio="xMidYMid slice"
+      >
+        <g id="mStars" opacity="0">
+          <circle cx="290" cy="120" r="1.6" fill="#fff" />
+          <circle cx="760" cy="95" r="2" fill="#fde68a" />
+          <circle cx="1180" cy="130" r="1.5" fill="#fff" />
+        </g>
+        <polygon
+          points="0,440 420,340 880,410 1440,330 1440,900 0,900"
+          fill="rgba(50,20,10,0.35)"
+        />
+        <!-- Shelter -->
+        <g transform="translate(830, 340)">
+          <polygon
+            points="0,80 120,20 240,80 120,140"
+            fill="#44403c"
+            stroke="#d6d3d1"
+            stroke-width="2"
+          />
+          <ellipse cx="120" cy="72" rx="75" ry="38" fill="#e7e5e4" />
+          <text
+            x="120"
+            y="76"
+            text-anchor="middle"
+            fill="#1c1917"
+            font-weight="bold"
+            font-size="12"
+          >
+            STORM SHELTER
+          </text>
+        </g>
+        <!-- O2 Unit -->
+        <g transform="translate(350, 420)">
+          <polygon
+            points="0,60 85,15 170,60 85,105"
+            fill="#292524"
+            stroke="#a8a29e"
+            stroke-width="2"
+          />
+          <circle cx="85" cy="52" r="24" fill="#38bdf8" />
+        </g>
+        <!-- Solar Array -->
+        <g transform="translate(560, 510)">
+          <polygon
+            points="0,55 115,0 230,55 115,110"
+            fill="#1e3a8a"
+            stroke="#93c5fd"
+            stroke-width="2"
+          />
+          <polygon
+            id="mDust"
+            points="0,55 115,0 230,55 115,110"
+            fill="rgba(180,83,9,0.52)"
+          />
+        </g>
+        <!-- Astronaut -->
+        <g id="mAstro" transform="translate(710, 460)">
+          <ellipse cx="0" cy="44" rx="22" ry="10" fill="rgba(0,0,0,0.4)" />
+          <rect x="-14" y="-6" width="28" height="34" rx="9" fill="#fafaf9" />
+          <circle cx="0" cy="-14" r="15" fill="#fafaf9" />
+          <ellipse cx="3" cy="-14" rx="10" ry="7" fill="#fbbf24" />
+        </g>
+      </svg>
+
+      <!-- TOP-LEFT MISSION PILL -->
+      <header class="tl-pill">
+        <span class="sol-badge" id="mSol">SOL 3 / 7</span>
+        <div>
+          <div style="font-size: 12px; font-weight: 700" id="mTime">
+            14:20 LMST · ☀ Daytime
+          </div>
+          <div style="font-size: 11px; color: var(--stone)" id="mObj">
+            Next: Sweep dust off Solar Array B
+          </div>
+        </div>
+      </header>
+
+      <!-- TOP-CENTER WEATHER & DATA STATUS -->
+      <div class="tc-stack">
+        <div class="weather-capsule" id="mWeather">
+          <span id="mWeatherMsg">☀ Quiet Conditions · Surface Safe</span>
+          <button
+            class="m-btn"
+            style="font-size: 10px; padding: 1px 7px"
+            onclick="cycleMWeather()"
+          >
+            Cycle Phase
+          </button>
+        </div>
+        <button
+          class="data-pill"
+          onclick="document.getElementById('mSci').classList.add('open')"
+        >
+          Archived Mars Reference + Reconstructed Shielding Model · ⓘ Sources
+        </button>
+      </div>
+
+      <!-- TOP-RIGHT PILLS & SINGLE UNIFIED DEVELOPER DRAWER -->
+      <div class="tr-pills">
+        <button
+          class="cap-btn"
+          onclick="document.getElementById('mCtrl').classList.toggle('open')"
+        >
+          ⌨ Controls
+        </button>
+        <button
+          class="cap-btn"
+          onclick="document.getElementById('mSci').classList.add('open')"
+        >
+          🔬 Science
+        </button>
+        <button class="cap-btn" onclick="setMState('paused')">⏸ Pause</button>
+        <button
+          class="cap-btn"
+          style="border-color: var(--ochre); color: var(--ochre)"
+          onclick="document.getElementById('mDev').classList.toggle('open')"
+        >
+          ⚙ Dev Settings
+        </button>
+
+        <!-- SINGLE UNIFIED TOP-RIGHT DEVELOPER SETTINGS (All 12 Categories) -->
+        <aside class="dev-drawer" id="mDev" aria-label="Developer Settings">
+          <div
+            style="
+              padding: 10px 14px;
+              border-bottom: 1px solid var(--stroke);
+              display: flex;
+              justify-content: space-between;
+              font-size: 12px;
+              font-weight: 700;
+              color: var(--ochre);
+            "
+          >
+            <span>⚙ Developer Settings (All 12 Categories)</span>
+            <button
+              class="m-btn"
+              onclick="document.getElementById('mDev').classList.remove('open')"
+            >
+              ✕
+            </button>
+          </div>
+          <div class="dev-scroll">
+            <details class="m-cat" open>
+              <summary>1. Movement and physics</summary>
+              <div class="m-param">
+                <span>Walk Velocity</span
+                ><span>4.5 m/s <input type="range" value="45" /></span>
+                <div class="m-desc">
+                  Surface movement speed in 0.38g gravity.
+                </div>
+              </div>
+            </details>
+            <details class="m-cat">
+              <summary>2. Camera and shake</summary>
+              <div class="m-param">
+                <span>Follow Smoothing</span
+                ><span>7.0 Hz <input type="range" value="45" /></span>
+                <div class="m-desc">Isometric camera tracking response.</div>
+              </div>
+            </details>
+            <details class="m-cat">
+              <summary>3. Player model and animation</summary>
+              <div class="m-param">
+                <span>Pose Blend Time</span
+                ><span>130 ms <input type="range" value="40" /></span>
+                <div class="m-desc">
+                  Transition duration between walk, run, and crouch.
+                </div>
+              </div>
+            </details>
+            <details class="m-cat">
+              <summary>4. Audio</summary>
+              <div class="m-param">
+                <span>Master Gain</span
+                ><span>-6 dB <input type="range" value="75" /></span>
+                <div class="m-desc">
+                  Ambient Martian wind and suit cue volume.
+                </div>
+              </div>
+            </details>
+            <details class="m-cat">
+              <summary>5. Scenario clock</summary>
+              <div class="m-param">
+                <span>Sol Length</span
+                ><span>360 sec <input type="range" value="50" /></span>
+                <div class="m-desc">
+                  Real-world seconds per simulated Martian sol.
+                </div>
+              </div>
+            </details>
+            <details class="m-cat">
+              <summary>6. Solar tracking and cleaning</summary>
+              <div class="m-param">
+                <span>Hold-E Clean Time</span
+                ><span>2.0 sec <input type="range" value="40" /></span>
+                <div class="m-desc">
+                  Hold duration required to sweep panel dust.
+                </div>
+              </div>
+            </details>
+            <details class="m-cat">
+              <summary>7. Battery and electrical loads</summary>
+              <div class="m-param">
+                <span>Battery Capacity</span
+                ><span>120 kWh <input type="range" value="60" /></span>
+                <div class="m-desc">Total station energy storage bank.</div>
+              </div>
+            </details>
+            <details class="m-cat">
+              <summary>8. Oxygen</summary>
+              <div class="m-param">
+                <span>O₂ Production Rate</span
+                ><span>6.4 kg/sol <input type="range" value="50" /></span>
+                <div class="m-desc">
+                  Oxygen output when generator is active.
+                </div>
+              </div>
+            </details>
+            <details class="m-cat">
+              <summary>9. Radiation and recoverable stress</summary>
+              <div class="m-param">
+                <span>Stress Recovery</span
+                ><span>12 pts/min <input type="range" value="50" /></span>
+                <div class="m-desc">
+                  Gameplay stress recovery rate inside shelter.
+                </div>
+              </div>
+            </details>
+            <details class="m-cat">
+              <summary>10. Shelter</summary>
+              <div class="m-param">
+                <span>Shielding Factor</span
+                ><span>92 % <input type="range" value="92" /></span>
+                <div class="m-desc">
+                  Dose-rate reduction inside storm shelter.
+                </div>
+              </div>
+            </details>
+            <details class="m-cat">
+              <summary>11. Rendering</summary>
+              <div class="m-param">
+                <span>Atmospheric Haze</span
+                ><span>55 % <input type="range" value="55" /></span>
+                <div class="m-desc">
+                  Martian horizon dust scattering density.
+                </div>
+              </div>
+            </details>
+            <details class="m-cat">
+              <summary>12. Presets and import/export</summary>
+              <div class="m-param">
+                <span>Classroom Presets</span>
+                <div style="display: flex; gap: 4px">
+                  <button class="m-btn" onclick="alert('Exported JSON')">
+                    Export</button
+                  ><button class="m-btn" onclick="alert('Import JSON')">
+                    Import
+                  </button>
+                </div>
+                <div class="m-desc">Save or load JSON scenario presets.</div>
+              </div>
+            </details>
+          </div>
+        </aside>
+      </div>
+
+      <!-- COLLAPSIBLE CONTROLS POPOVER -->
+      <div class="ctrl-pop" id="mCtrl">
+        <div style="font-weight: 700; margin-bottom: 4px; color: var(--ochre)">
+          Keyboard Controls
+        </div>
+        <div>WASD / Arrows: Move · Shift: Run</div>
+        <div>Space: Jump · C: Crouch</div>
+        <div>E: Interact · Hold E: Clean Panels</div>
+      </div>
+
+      <!-- SPATIAL WORLD PROMPT -->
+      <div
+        class="spatial-pin"
+        onmousedown="startMHold()"
+        onmouseup="stopMHold()"
+      >
+        <span class="pin-key">Hold E</span>
+        <div>
+          <div style="font-size: 12px; font-weight: 700">
+            Clean Solar Array B (<span id="mPct">0%</span>)
+          </div>
+          <div style="font-size: 10px; color: var(--stone)" id="mPinSub">
+            Hold E or click & hold badge · Release cancels
+          </div>
+        </div>
+      </div>
+
+      <!-- EXPANDABLE INSPECTOR -->
+      <div class="inspector-card" id="mInsp">
+        <div
+          style="
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+          "
+        >
+          <strong style="font-size: 12px; color: var(--ochre)"
+            >Power & Radiation Telemetry Details</strong
+          >
+          <button
+            class="m-btn"
+            style="font-size: 10px"
+            onclick="document.getElementById('mInsp').classList.remove('open')"
+          >
+            Close ✕
+          </button>
+        </div>
+        <div
+          style="
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            font-size: 11px;
+            color: #e7e5e4;
+          "
+        >
+          <div>
+            <div><strong>Power Balance:</strong></div>
+            <div>Solar Generation: <span id="mDetSol">+26.4 kW</span></div>
+            <div>Station Consumption: <span id="mDetLoad">-15.8 kW</span></div>
+            <div>Solar covers <span id="mDetCov">100%</span> of load.</div>
+          </div>
+          <div>
+            <div><strong>Radiation Sensor:</strong></div>
+            <div>
+              Current Dose Rate: <span id="mDetRate">0.03 mGy/hour</span>
+            </div>
+            <div>
+              Physical dose (mGy) never decreases; Stress (0–100) recovers in
+              shelter.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BOTTOM-CENTER UNIFIED SURVIVAL DOCK -->
+      <section class="survival-dock" aria-label="Outpost Survival Status">
+        <div class="seg">
+          <div class="seg-top">
+            <span>🔋 Battery</span
+            ><span id="mBatSt" style="color: var(--sage)"
+              >Charging (+10.6 kW)</span
+            >
+          </div>
+          <div class="seg-num" id="mBat">76% · 91.2 kWh</div>
+          <div class="bar-bg">
+            <div
+              class="bar-fg"
+              id="mBatBar"
+              style="width: 76%; background: var(--sage)"
+            ></div>
+          </div>
+          <div
+            id="mBatWarn"
+            style="
+              display: none;
+              font-size: 10px;
+              color: var(--terracotta);
+              font-weight: 700;
+            "
+          >
+            ⚠ Low Battery Reserve
+          </div>
+        </div>
+        <div class="v-sep"></div>
+        <div class="seg" style="min-width: 120px">
+          <div class="seg-top">
+            <span>🫧 Oxygen</span><span id="mO2St">Nominal</span>
+          </div>
+          <div class="seg-num" id="mO2">18.6 kg O₂</div>
+          <div class="bar-bg">
+            <div
+              class="bar-fg"
+              id="mO2Bar"
+              style="width: 77.5%; background: var(--sky)"
+            ></div>
+          </div>
+        </div>
+        <div class="v-sep"></div>
+        <div class="seg">
+          <div class="seg-top">
+            <span>Physical Dose</span
+            ><span style="color: var(--sky)">Never Decreases</span>
+          </div>
+          <div class="seg-num" id="mDose">1.48 / 5.00 mGy</div>
+          <div class="bar-bg">
+            <div
+              class="bar-fg"
+              id="mDoseBar"
+              style="width: 29.6%; background: var(--sky)"
+            ></div>
+          </div>
+        </div>
+        <div class="v-sep"></div>
+        <div class="seg">
+          <div class="seg-top">
+            <span>⚠ Rad Stress</span
+            ><span style="color: var(--ochre)">Game Mechanic</span>
+          </div>
+          <div class="seg-num" id="mStress">12 / 100 (Calm)</div>
+          <div class="bar-bg">
+            <div
+              class="bar-fg"
+              id="mStressBar"
+              style="width: 12%; background: var(--ochre)"
+            ></div>
+          </div>
+          <div
+            id="mShNote"
+            style="
+              display: none;
+              font-size: 10px;
+              color: var(--sage);
+              font-weight: 700;
+            "
+          >
+            🛡 Shelter Active · Recovering ▾
+          </div>
+        </div>
+        <button
+          class="cap-btn"
+          style="padding: 5px 10px; font-size: 11px"
+          onclick="document.getElementById('mInsp').classList.toggle('open')"
+        >
+          Details ▴
+        </button>
+      </section>
+
+      <!-- SCIENCE MODAL -->
+      <div class="modal-bg" id="mSci">
+        <div class="modal-card">
+          <h3 style="margin-bottom: 8px">🔬 Science & Modeling Sources</h3>
+          <p
+            style="
+              font-size: 13px;
+              color: #e7e5e4;
+              line-height: 1.5;
+              margin-bottom: 10px;
+            "
+          >
+            Baseline radiation and solar cycles reference
+            <strong>archived Mars surface observations</strong>. Particle-event
+            arrival timing and storm-shelter shielding are
+            <strong>reconstructed simulation models</strong>.
+          </p>
+          <p style="font-size: 12px; color: var(--ochre); margin-bottom: 14px">
+            Physical Dose (mGy) accumulates permanently. Radiation Stress
+            (0–100) is a game mechanic that recovers inside the storm shelter.
+          </p>
+          <button
+            class="cap-btn"
+            onclick="document.getElementById('mSci').classList.remove('open')"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+
+      <!-- PAUSE MODAL -->
+      <div class="modal-bg" id="mPause">
+        <div class="modal-card" style="text-align: center; max-width: 360px">
+          <h2 style="margin-bottom: 10px">⏸ Game Paused</h2>
+          <button class="cap-btn" onclick="setMState('day')">
+            ▶ Resume Exploration
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- DESIGN PREVIEW TOOLBAR -->
+    <nav class="preview-bar">
+      <span style="font-size: 10px; color: var(--ochre); font-weight: 700"
+        >DESIGN PREVIEW · SAMPLE VALUES:</span
+      >
+      <button class="m-btn active" id="mb-day" onclick="setMState('day')">
+        1. Normal Daytime
+      </button>
+      <button class="m-btn" id="mb-night" onclick="setMState('night')">
+        2. Nighttime Discharge
+      </button>
+      <button class="m-btn" id="mb-warn" onclick="setMState('warn')">
+        3. Particle-Event Warning
+      </button>
+      <button class="m-btn" id="mb-shelter" onclick="setMState('shelter')">
+        4. Shelter Occupied
+      </button>
+      <button class="m-btn" id="mb-paused" onclick="setMState('paused')">
+        5. Paused Gameplay
+      </button>
+    </nav>
+
+    <script>
+      function setMState(st) {
+        document
+          .querySelectorAll(".preview-bar .m-btn")
+          .forEach((b) => b.classList.remove("active"));
+        document.getElementById("mb-" + st)?.classList.add("active");
+        if (st === "paused") {
+          document.getElementById("mPause").classList.add("open");
+          return;
+        }
+        document.getElementById("mPause").classList.remove("open");
+
+        const vp = document.getElementById("mVp");
+        const w = document.getElementById("mWeather");
+        document.getElementById("mBatWarn").style.display = "none";
+        document.getElementById("mShNote").style.display = "none";
+
+        if (st === "day") {
+          vp.className = "viewport";
+          document.getElementById("mStars").setAttribute("opacity", 0);
+          document
+            .getElementById("mAstro")
+            .setAttribute("transform", "translate(710, 460)");
+          document.getElementById("mTime").textContent =
+            "14:20 LMST · ☀ Daytime";
+          document.getElementById("mObj").textContent =
+            "Next: Sweep dust off Solar Array B";
+          w.className = "weather-capsule";
+          document.getElementById("mWeatherMsg").textContent =
+            "☀ Quiet Conditions · Surface Safe";
+          document.getElementById("mBatSt").textContent = "Charging (+10.6 kW)";
+          document.getElementById("mBat").textContent = "76% · 91.2 kWh";
+          document.getElementById("mBatBar").style.width = "76%";
+          document.getElementById("mDose").textContent = "1.48 / 5.00 mGy";
+          document.getElementById("mStress").textContent = "12 / 100 (Calm)";
+          document.getElementById("mStressBar").style.width = "12%";
+          document.getElementById("mDetRate").textContent = "0.03 mGy/hour";
+        } else if (st === "night") {
+          vp.className = "viewport night";
+          document.getElementById("mStars").setAttribute("opacity", 1);
+          document
+            .getElementById("mAstro")
+            .setAttribute("transform", "translate(655, 455)");
+          document.getElementById("mTime").textContent =
+            "01:45 LMST · ☾ Nighttime";
+          document.getElementById("mObj").textContent =
+            "Conserve battery until dawn";
+          w.className = "weather-capsule";
+          document.getElementById("mWeatherMsg").textContent =
+            "☾ Quiet Night · 0 kW Solar";
+          document.getElementById("mBatSt").textContent =
+            "Discharging (-14.2 kW)";
+          document.getElementById("mBat").textContent = "22% · 26.4 kWh";
+          document.getElementById("mBatBar").style.width = "22%";
+          document.getElementById("mBatWarn").style.display = "block";
+        } else if (st === "warn") {
+          vp.className = "viewport storm";
+          document
+            .getElementById("mAstro")
+            .setAttribute("transform", "translate(775, 435)");
+          document.getElementById("mTime").textContent =
+            "09:30 LMST · ⚠ Storm Inbound";
+          document.getElementById("mObj").textContent =
+            "Enter Storm Shelter before event arrives";
+          w.className = "weather-capsule warn";
+          document.getElementById("mWeatherMsg").textContent =
+            "⚠ Particle Event in 01:45 · Seek Shelter";
+          document.getElementById("mStress").textContent = "68 / 100 (Hazard)";
+          document.getElementById("mStressBar").style.width = "68%";
+          document.getElementById("mDetRate").textContent = "0.72 mGy/hour";
+        } else if (st === "shelter") {
+          vp.className = "viewport storm";
+          document
+            .getElementById("mAstro")
+            .setAttribute("transform", "translate(945, 395) scale(0.82)");
+          document.getElementById("mTime").textContent =
+            "10:15 LMST · 🛡 Inside Shelter";
+          document.getElementById("mObj").textContent =
+            "Sheltered (-92% flux) · Stress recovering";
+          w.className = "weather-capsule active";
+          document.getElementById("mWeatherMsg").textContent =
+            "🚨 Active Particle Event · Stay in Shelter";
+          document.getElementById("mDose").textContent = "2.04 / 5.00 mGy";
+          document.getElementById("mStress").textContent =
+            "34 / 100 (Recovering ▾)";
+          document.getElementById("mStressBar").style.width = "34%";
+          document.getElementById("mShNote").style.display = "block";
+          document.getElementById("mDetRate").textContent =
+            "0.15 mGy/hour (Shielded)";
+        }
+      }
+
+      let mw = 0;
+      function cycleMWeather() {
+        const list = [
+          { c: "weather-capsule", t: "☀ Quiet Conditions · Surface Safe" },
+          {
+            c: "weather-capsule warn",
+            t: "⚠ Particle Event in 01:45 · Seek Shelter",
+          },
+          {
+            c: "weather-capsule active",
+            t: "🚨 Active Particle Event · Enter Shelter Now",
+          },
+          {
+            c: "weather-capsule recovery",
+            t: "✔ Recovery / End-of-Event · Safe to Exit",
+          },
+        ];
+        mw = (mw + 1) % list.length;
+        document.getElementById("mWeather").className = list[mw].c;
+        document.getElementById("mWeatherMsg").textContent = list[mw].t;
+      }
+
+      let mp = 0,
+        mT = null;
+      function startMHold() {
+        if (mT) return;
+        mT = setInterval(() => {
+          mp = Math.min(100, mp + 5);
+          document.getElementById("mPct").textContent = mp + "%";
+          if (mp >= 100) {
+            clearInterval(mT);
+            mT = null;
+            document
+              .getElementById("mDust")
+              .setAttribute("fill", "rgba(0,0,0,0)");
+            document.getElementById("mPinSub").textContent =
+              "✔ Array Cleaned! (+40.4 kW)";
+          }
+        }, 50);
+      }
+      function stopMHold() {
+        if (mT) {
+          clearInterval(mT);
+          mT = null;
+        }
+        if (mp > 0 && mp < 100) {
+          mp = 0;
+          document.getElementById("mPct").textContent = "0%";
+          document.getElementById("mPinSub").textContent =
+            "Cancelled — hold E continuously";
+        }
+      }
+    </script>
+    <script>
+      // Convert icon tokens in visible text, including preview-state updates, into local SVGs.
+      const iconNames = {
+        "☀": "sun",
+        "☾": "moon",
+        "⌨": "keyboard",
+        "🔬": "science",
+        "⏸": "pause",
+        "⚙": "gear",
+        "✕": "close",
+        "▶": "play",
+        "🔋": "battery",
+        "🫧": "oxygen",
+        "⚠": "warning",
+        "🛡": "shield",
+        "🚨": "bell",
+        "ⓘ": "info",
+        "✔": "check",
+        "▾": "down",
+        "▴": "up",
+      };
+      const tokenPattern = new RegExp(
+        "(" + Object.keys(iconNames).join("|") + ")\uFE0F?",
+        "gu",
+      );
+      function iconize() {
+        const walker = document.createTreeWalker(
+          document.body,
+          NodeFilter.SHOW_TEXT,
+        );
+        const nodes = [];
+        let node;
+        while ((node = walker.nextNode())) {
+          if (node.parentElement.closest("script,style,svg")) continue;
+          tokenPattern.lastIndex = 0;
+          if (tokenPattern.test(node.nodeValue)) nodes.push(node);
+        }
+        for (const textNode of nodes) {
+          const fragment = document.createDocumentFragment();
+          tokenPattern.lastIndex = 0;
+          let at = 0;
+          for (const match of textNode.nodeValue.matchAll(tokenPattern)) {
+            fragment.append(
+              document.createTextNode(
+                textNode.nodeValue.slice(at, match.index),
+              ),
+            );
+            const svg = document.createElementNS(
+              "http://www.w3.org/2000/svg",
+              "svg",
+            );
+            svg.setAttribute("class", "ui-icon");
+            svg.setAttribute("viewBox", "0 0 24 24");
+            svg.setAttribute("aria-hidden", "true");
+            svg.setAttribute("focusable", "false");
+            const use = document.createElementNS(
+              "http://www.w3.org/2000/svg",
+              "use",
+            );
+            use.setAttribute("href", "#ui-" + iconNames[match[1]]);
+            svg.append(use);
+            fragment.append(svg);
+            at = match.index + match[0].length;
+          }
+          fragment.append(
+            document.createTextNode(textNode.nodeValue.slice(at)),
+          );
+          textNode.replaceWith(fragment);
+        }
+      }
+      document
+        .querySelector("#mDev .m-btn")
+        .setAttribute("aria-label", "Close developer settings");
+      document
+        .querySelectorAll(".data-pill")
+        .forEach((b) =>
+          b.setAttribute("aria-label", "Open science and source information"),
+        );
+      iconize();
+      new MutationObserver(iconize).observe(document.body, {
+        subtree: true,
+        childList: true,
+        characterData: true,
+      });
+      window.addEventListener("keydown", (event) => {
+        if (
+          event.code === "KeyE" &&
+          !event.repeat &&
+          !event.target.closest("input,select,button")
+        ) {
+          event.preventDefault();
+          startMHold();
+        }
+      });
+      window.addEventListener("keyup", (event) => {
+        if (event.code === "KeyE") stopMHold();
+      });
+      window.addEventListener("blur", stopMHold);
+      document.addEventListener("visibilitychange", () => {
+        if (document.hidden) stopMHold();
+      });
+    </script>
+  </body>
+</html>
