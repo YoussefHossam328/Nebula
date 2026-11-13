@@ -1,11 +1,11 @@
 import { test, expect } from "@playwright/test";
-test("loads supplied player, maps locomotion without root travel and decodes all provided sounds", async ({
+test("loads supplied player, maps locomotion without root travel and initializes all synthesized sound buffers", async ({
   page,
 }) => {
   test.setTimeout(45000);
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
-  await page.goto("./");
+  await page.goto("./?lab");
   await page.waitForFunction(() => (window as any).nebula?.ready);
   expect(await page.evaluate(() => (window as any).nebula.model.loaded)).toBe(
     true,

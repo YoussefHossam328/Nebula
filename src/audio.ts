@@ -67,24 +67,30 @@ export class GameAudio {
         this.effects.connect(this.master);
       }
       if (this.context.state === "suspended") await this.context.resume();
-      if (!this.loading)
-        this.loading = Promise.all(
-          soundFiles.map(async (name) => {
-            try {
-              const response = await fetch(
-                import.meta.env.BASE_URL + `audio/${name}.wav`,
-              );
-              if (!response.ok) throw Error("Audio file unavailable");
-              const b = await this.context!.decodeAudioData(
-                await response.arrayBuffer(),
-              );
-              this.buffers.set(name, b);
-            } catch {
-              this.failed++;
-            }
-          }),
-        ).then(() => {});
-      await this.loading;
+      if (!this.loading) {
+        // Original synthesized sound design: filtered grains, no external recordings.
+        for (const name of soundFiles) {
+          const ambient = name === "mars_bg_loop";
+          const duration = ambient ? 4 : name === "jump" ? 0.18 : 0.25;
+          const buffer = this.context.createBuffer(
+            1,
+            Math.ceil(this.context.sampleRate * duration),
+            this.context.sampleRate,
+          );
+          const data = buffer.getChannelData(0);
+          let low = 0;
+          for (let i = 0; i < data.length; i++) {
+            const t = i / this.context.sampleRate;
+            low += (Math.random() * 2 - 1 - low) * (ambient ? 0.003 : 0.09);
+            const envelope = ambient
+              ? 0.13
+              : Math.sin((Math.PI * t) / duration) * Math.exp(-t * 14);
+            data[i] = low * envelope * (ambient ? 1 : 0.7);
+          }
+          this.buffers.set(name, buffer);
+        }
+        this.loading = Promise.resolve();
+      }
       if (!this.loop && this.buffers.has("mars_bg_loop")) {
         this.loop = this.context.createBufferSource();
         this.loop.buffer = this.buffers.get("mars_bg_loop")!;
@@ -97,15 +103,30 @@ export class GameAudio {
       /* Audio permission/device failures never stop the game. */
     }
   }
+  private sceneMuted = true;
+  private indoors = false;
+  private storm = false;
+  setScene(muted: boolean, indoors: boolean, storm: boolean) {
+    this.sceneMuted = muted;
+    this.indoors = indoors;
+    this.storm = storm;
+  }
   sync() {
     if (!this.context || !this.master) return;
     const t = this.context.currentTime;
     this.master.gain.setTargetAtTime(
-      this.settings.audioEnabled ? this.settings.masterVolume : 0,
+      this.settings.audioEnabled && !this.sceneMuted
+        ? this.settings.masterVolume
+        : 0,
       t,
       0.03,
     );
-    this.ambient!.gain.setTargetAtTime(this.settings.ambientVolume, t, 0.03);
+    this.ambient!.gain.setTargetAtTime(
+      this.settings.ambientVolume *
+        (this.indoors ? 0.15 : this.storm ? 1 : 0.4),
+      t,
+      0.2,
+    );
     this.effects!.gain.setTargetAtTime(this.settings.effectsVolume, t, 0.03);
   }
   play(name: Sound) {
@@ -147,6 +168,24 @@ export class GameAudio {
       } else this.distance = 0;
     }
     this.lastPosition = { x: p.x, z: p.z };
+  }
+  cue() {
+    if (!this.context || this.context.state !== "running" || this.sceneMuted)
+      return;
+    const oscillator = this.context.createOscillator(),
+      gain = this.context.createGain();
+    oscillator.type = "sine";
+    oscillator.frequency.value = 280;
+    gain.gain.setValueAtTime(0, this.context.currentTime);
+    gain.gain.linearRampToValueAtTime(0.06, this.context.currentTime + 0.03);
+    gain.gain.exponentialRampToValueAtTime(
+      0.001,
+      this.context.currentTime + 0.35,
+    );
+    oscillator.connect(gain);
+    gain.connect(this.effects!);
+    oscillator.start();
+    oscillator.stop(this.context.currentTime + 0.4);
   }
   preview() {
     this.unlocked = true;

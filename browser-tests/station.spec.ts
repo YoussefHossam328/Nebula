@@ -5,7 +5,7 @@ test("walks into a colliding prototype habitat and cuts away roof, then restores
   test.setTimeout(45000);
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
-  await page.goto("./");
+  await page.goto("./?lab");
   await page.waitForFunction(() => (window as any).nebula?.ready);
   expect(
     await page.evaluate(() => (window as any).nebula.station.roofVisible),
@@ -32,7 +32,7 @@ test("walks into a colliding prototype habitat and cuts away roof, then restores
 test("facing stays fixed during stopping and settings explain themselves", async ({
   page,
 }) => {
-  await page.goto("./");
+  await page.goto("./?lab");
   await page.waitForFunction(() => (window as any).nebula?.ready);
   await page.keyboard.down("KeyD");
   await page.waitForTimeout(300);

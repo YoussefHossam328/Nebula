@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 test("loads the authored solar model and keeps its mast upright while the child tracks", async ({
   page,
 }) => {
-  await page.goto("./");
+  await page.goto("./?lab");
   await page.waitForFunction(() => (window as any).nebula?.solar?.loaded);
   const solar = await page.evaluate(() => (window as any).nebula.solar);
   expect(solar.materialCount).toBe(2);

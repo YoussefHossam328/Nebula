@@ -14,6 +14,7 @@ import { SOL_SECONDS } from "./base/config";
 import { describePanel } from "./setting-help";
 import { smoothHeading } from "./turning";
 import { GameAudio } from "./audio";
+import { mission } from "./mission";
 import { training } from "./resources/ui";
 const status = document.querySelector<HTMLElement>("#status")!;
 let noticeUntil = 0;
@@ -109,7 +110,26 @@ async function start() {
     .addFolder("Audio · preview")
     .add({ previewAudio: () => audio.preview() }, "previewAudio")
     .name("Preview landing sound");
+  const game = mission(
+    base,
+    settingsPanel,
+    scene,
+    world,
+    () => input.clear(),
+    () => {
+      player.reset();
+      player.body.setTranslation(
+        { x: 8, y: player.height / 2 + 0.15, z: -5 },
+        true,
+      );
+      player.body.setNextKinematicTranslation(player.body.translation());
+      follow.reset();
+      current.copy(player.body.translation());
+      previous.copy(current);
+    },
+  );
   describePanel(settingsPanel);
+  let lastAudioEvent = "";
   let lastRunShake = 0,
     visibleHeading = 0,
     hadContact = false;
@@ -120,13 +140,13 @@ async function start() {
     accumulator += dt;
     elapsed += dt;
     while (accumulator >= DT) {
-      const a = input.axes();
+      const a = game.blocked ? { x: 0, z: 0 } : input.axes();
       const yaw = (s.yaw * Math.PI) / 180;
       const axis = {
         x: a.x * Math.cos(yaw) - a.z * Math.sin(yaw),
         z: -a.x * Math.sin(yaw) - a.z * Math.cos(yaw),
       };
-      if (input.take("KeyR")) {
+      if (!game.blocked && input.take("KeyR")) {
         player.reset();
         follow.reset();
         current.copy(player.body.translation());
@@ -137,9 +157,9 @@ async function start() {
       player.tick(
         s,
         axis,
-        input.down("ShiftLeft", "ShiftRight"),
-        input.down("KeyC"),
-        input.take("Space"),
+        !game.blocked && input.down("ShiftLeft", "ShiftRight"),
+        !game.blocked && input.down("KeyC"),
+        !game.blocked && input.take("Space"),
       );
       current.copy(player.body.translation());
       if (current.distanceTo(previous) > 5) {
@@ -162,13 +182,14 @@ async function start() {
         lastRunShake = elapsed;
       }
       accumulator -= DT;
-      if (input.take("KeyE")) {
+      if (!game.blocked && input.take("KeyE")) {
         const p = player.body.translation();
         const feet = p.y - player.height / 2;
         const oxygenDistance = Math.hypot(p.x + 2, p.z - 2);
         const beaconDistance = Math.hypot(p.x - 3, p.z - 2);
         const vertical = Math.abs(feet) < 1;
-        if (base.active) base.interact({ x: p.x, y: feet, z: p.z });
+        if (game.interact({ x: p.x, y: feet, z: p.z })) {
+        } else if (base.active) base.interact({ x: p.x, y: feet, z: p.z });
         else if (
           resources?.active &&
           vertical &&
@@ -185,7 +206,21 @@ async function start() {
     base.tick(
       now,
       { x: p.x, y: p.y - player.height / 2, z: p.z },
-      input.down("KeyE"),
+      !game.blocked && input.down("KeyE"),
+    );
+    game.update(
+      dt,
+      { x: p.x, y: p.y - player.height / 2, z: p.z },
+      Math.hypot(player.vx, player.vz),
+    );
+    if ("event" in game && game.event !== lastAudioEvent) {
+      lastAudioEvent = String(game.event);
+      audio.cue();
+    }
+    audio.setScene(
+      game.blocked,
+      base.sim.inShelter,
+      base.sim.hazard === "dust",
     );
     if (base.active) {
       const light = baseScene.update(
@@ -274,6 +309,12 @@ async function start() {
     );
     follow.update(target, dt, elapsed, s);
     area.ring.rotation.z = elapsed * 0.3;
+    if (game.state !== "lab")
+      scene.children.forEach((o) => {
+        if (o instanceof THREE.Sprite)
+          o.visible =
+            !game.blocked && o.position.distanceTo(visual.root.position) < 5;
+      });
     renderer.render(scene, camera);
     frames++;
     if (now - sample > 1000) {
@@ -287,6 +328,7 @@ async function start() {
     Object.assign(window, {
       nebula: {
         ready: true,
+        game: game.state,
         position: { ...p },
         grounded: player.grounded,
         crouched: player.crouched,
@@ -307,6 +349,9 @@ async function start() {
               oxygen: base.sim.oxygen,
               dose: base.sim.dose,
               stress: base.sim.stress,
+              nourishment: base.sim.nourishment,
+              crops: [...base.sim.crops],
+              hazard: base.sim.hazard,
               cleanProgress: base.sim.cleanProgress,
               cleanCount: base.sim.cleanCount,
               sheltered: base.sim.inShelter,

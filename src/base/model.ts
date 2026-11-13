@@ -63,6 +63,23 @@ export function doseRate(time: number, c: BaseConfig, sheltered: boolean) {
 }
 export class BaseSimulation {
   elapsed = 0;
+  nourishment = 80;
+  crops = [1, 1];
+  foodDrain = 25;
+  mealSize = 35;
+  cropSols = 1;
+  cropWatts = 400;
+  dustTransmission = 0.45;
+  coldWatts = 300;
+  hazard: "dust" | "cold" | "none" = "none";
+  harvest() {
+    if (this.state !== "running" || this.nourishment >= 100) return false;
+    const i = this.crops.findIndex((v) => v >= 1);
+    if (i < 0) return false;
+    this.crops[i] = 0;
+    this.nourishment = Math.min(100, this.nourishment + this.mealSize);
+    return true;
+  }
   battery: number;
   oxygen: number;
   dose = 0;
@@ -140,14 +157,28 @@ export class BaseSimulation {
     const c = this.config,
       sun = sunlight(t, c);
     const pv =
-      sun.irradiance * c.area * c.panelEfficiency * this.dust * sun.incidence;
+      (this.hazard === "dust" ? this.dustTransmission : 1) *
+      sun.irradiance *
+      c.area *
+      c.panelEfficiency *
+      this.dust *
+      sun.incidence;
     const tracking = sun.daylight && c.tracking ? c.trackingPower : 0;
     const essential =
-      c.baseLoad + (this.inShelter ? c.shelterLoad : 0) + tracking;
+      c.baseLoad +
+      (this.hazard === "cold" ? this.coldWatts : 0) +
+      (this.inShelter ? c.shelterLoad : 0) +
+      tracking;
     const available = pv + (this.battery > 1e-8 ? c.dischargeLimit : 0);
     const powered =
       this.generator && available + 1e-8 >= essential + c.generatorLoad;
-    const load = essential + (powered ? c.generatorLoad : 0);
+    const cropsPowered =
+      this.crops.some((v) => v < 1) &&
+      available >= essential + (powered ? c.generatorLoad : 0) + this.cropWatts;
+    const load =
+      essential +
+      (powered ? c.generatorLoad : 0) +
+      (cropsPowered ? this.cropWatts : 0);
     const deficit = Math.max(0, load - pv);
     const batteryDraw = Math.min(
       deficit,
@@ -158,6 +189,7 @@ export class BaseSimulation {
       pv,
       load,
       powered,
+      cropsPowered,
       batteryDraw,
       unserved: Math.max(0, deficit - batteryDraw),
       surplus: Math.max(0, pv - load),
@@ -252,6 +284,14 @@ export class BaseSimulation {
         0,
         (f.surplus * dt) / 3600 - charged / c.chargeEfficiency,
       );
+      this.nourishment = Math.max(
+        0,
+        this.nourishment - (this.foodDrain * dt) / SOL_SECONDS,
+      );
+      if (f.cropsPowered)
+        this.crops = this.crops.map((v) =>
+          Math.min(1, v + dt / (this.cropSols * SOL_SECONDS)),
+        );
       this.elapsed += dt;
       remaining -= dt;
       this.dust = Math.max(
@@ -259,7 +299,8 @@ export class BaseSimulation {
         this.dust - (c.dustLossPerSol * dt) / SOL_SECONDS,
       );
       this.generatorPowered = f.powered;
-      if (this.oxygen <= 1e-8) this.lose("Oxygen depleted");
+      if (this.nourishment <= 0) this.lose("Food depleted");
+      else if (this.oxygen <= 1e-8) this.lose("Oxygen depleted");
       else if (this.dose >= c.doseLimitMGy - 1e-8)
         this.lose("Operational dose limit exceeded");
       else if (this.elapsed >= this.endTime - 1e-6) this.state = "completed";

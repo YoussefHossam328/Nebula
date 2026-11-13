@@ -1,0 +1,33 @@
+import { test, expect } from "vitest";
+import { BaseSimulation } from "../src/base/model";
+import { baseDefaults, SOL_SECONDS } from "../src/base/config";
+test("harvest caps food, replants once, and requires powered regrowth", () => {
+  const s = new BaseSimulation({ ...baseDefaults });
+  s.start();
+  s.nourishment = 90;
+  expect(s.harvest()).toBe(true);
+  expect(s.nourishment).toBe(100);
+  expect(s.crops).toEqual([0, 1]);
+  expect(s.harvest()).toBe(false);
+  s.config.area = 0;
+  s.battery = 0;
+  s.advance(3600);
+  expect(s.crops[0]).toBe(0);
+  s.battery = 20000;
+  s.advance(3600);
+  expect(s.crops[0]).toBeGreaterThan(0);
+});
+test("food loss and recovery are separate from cumulative physical radiation", () => {
+  const s = new BaseSimulation({ ...baseDefaults, eventDoseMGy: 0 });
+  s.start();
+  s.nourishment = 0.01;
+  s.advance(SOL_SECONDS);
+  expect(s.reason).toBe("Food depleted");
+  const r = new BaseSimulation({ ...baseDefaults, eventDoseMGy: 0 });
+  r.start();
+  r.stress = 40;
+  const before = r.dose;
+  r.advance(3600, true);
+  expect(r.stress).toBeLessThan(40);
+  expect(r.dose).toBeGreaterThan(before);
+});

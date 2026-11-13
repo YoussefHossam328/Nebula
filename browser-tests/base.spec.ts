@@ -4,7 +4,7 @@ test("launches seven-sol scenario with tracked generation and physical telemetry
 }) => {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
-  await page.goto("./");
+  await page.goto("./?lab");
   await page.waitForFunction(() => (window as any).nebula?.ready);
   await page.locator("#base-start").click();
   await page.locator("canvas").focus();
@@ -33,7 +33,7 @@ test("launches seven-sol scenario with tracked generation and physical telemetry
 test("walks to array, cancels a hold, cleans while held, and preserves exposure on reset", async ({
   page,
 }) => {
-  await page.goto("./");
+  await page.goto("./?lab");
   await page.waitForFunction(() => (window as any).nebula?.ready);
   await page.locator("#base-start").click();
   await page.locator("canvas").focus();
@@ -90,7 +90,7 @@ test("shelter entry requires walking through its open side", async ({
   page,
 }) => {
   test.setTimeout(45000);
-  await page.goto("./");
+  await page.goto("./?lab");
   await page.waitForFunction(() => (window as any).nebula?.ready);
   await page.locator("#base-start").click();
   await page.locator("canvas").focus();

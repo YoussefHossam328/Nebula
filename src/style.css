@@ -331,3 +331,222 @@ body.base-active .training {
 .lil-gui form label .setting-help {
   margin-bottom: 7px;
 }
+/* Player shell: engineering controls share the single top-right debug window. */
+.game-shell header,
+.game-shell footer,
+.game-shell #hint,
+.game-shell .readout,
+.game-shell .training-actions,
+.game-shell .base-hud,
+.game-shell .resource-hud {
+  display: none !important;
+}
+#game-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 8vw;
+  background: linear-gradient(
+    90deg,
+    rgba(10, 18, 24, 0.94),
+    rgba(10, 18, 24, 0.2)
+  );
+  color: #edf4ef;
+}
+#game-overlay[hidden],
+#mission-hud[hidden] {
+  display: none;
+}
+#game-overlay h1 {
+  font-size: clamp(2rem, 6vw, 5rem);
+  letter-spacing: 0.14em;
+  margin: 0 0 20px;
+  line-height: 1.15;
+  max-width: 800px;
+}
+#game-overlay p {
+  font-size: clamp(16px, 2vw, 21px);
+  line-height: 1.65;
+  max-width: 620px;
+  margin-bottom: 24px;
+}
+#game-overlay button {
+  margin: 5px 0;
+  min-width: 210px;
+  padding: 14px 24px;
+  text-align: left;
+  background: #dcece4;
+  color: #142d32;
+  border: 1px solid #a1c7bd;
+  border-radius: 4px;
+  font: 600 16px system-ui;
+  cursor: pointer;
+}
+#game-overlay button ~ button {
+  background: #182d35;
+  color: #dcece4;
+}
+#mission-hud {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  color: #f1f7ee;
+  z-index: 10;
+  text-shadow: 0 2px 4px #101e25;
+  font-family: system-ui;
+}
+.mission-top {
+  position: absolute;
+  top: 22px;
+  left: 24px;
+  right: 24px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+.mission-top b {
+  letter-spacing: 0.25em;
+}
+.mission-top button {
+  pointer-events: auto;
+  padding: 9px 13px;
+  background: #162b32;
+  color: #e3eeea;
+  border: 1px solid #819e9d;
+  border-radius: 4px;
+}
+.mission-top button:first-of-type {
+  margin-left: auto;
+}
+.mission-dock {
+  position: absolute;
+  bottom: 72px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 30px;
+}
+.mission-dock label {
+  display: grid;
+  grid-template-columns: 24px 110px;
+  gap: 6px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.mission-dock svg {
+  width: 22px;
+  height: 22px;
+  stroke: #aee7dd;
+  fill: none;
+  stroke-width: 1.7;
+  grid-row: span 2;
+}
+.mission-dock meter {
+  width: 110px;
+  height: 9px;
+}
+.mission-dock span {
+  grid-column: 2;
+  font-variant-numeric: tabular-nums;
+}
+#mission-event {
+  text-align: center;
+  margin: 80px 20px 0;
+  color: #f2d2a0;
+  font-size: 14px;
+}
+#mission-prompt {
+  position: absolute;
+  bottom: 150px;
+  left: 12%;
+  right: 12%;
+  text-align: center;
+}
+#mission-dose {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  right: 20px;
+  text-align: center;
+  font-size: 11px;
+  color: #c9ddd8;
+}
+.game-shell .lil-gui.lil-root {
+  z-index: 40;
+  top: 65px;
+  max-height: 80vh;
+  overflow: auto;
+}
+.dust-event #mission-hud {
+  background: repeating-linear-gradient(
+    170deg,
+    transparent 0 38px,
+    rgba(207, 145, 94, 0.07) 39px 42px
+  );
+  box-shadow: inset 0 0 180px 65px #b17f4650;
+}
+.radiation-event #mission-event {
+  color: #ffd293;
+  border-bottom: 2px solid #dfaa69;
+  padding-bottom: 10px;
+}
+@media (max-width: 700px) {
+  .mission-top {
+    gap: 9px;
+    left: 10px;
+    right: 10px;
+    font-size: 11px;
+  }
+  .mission-dock {
+    gap: 12px;
+    bottom: 75px;
+  }
+  .mission-dock label {
+    grid-template-columns: 16px 55px;
+    font-size: 10px;
+  }
+  .mission-dock meter {
+    width: 55px;
+  }
+  .mission-dock svg {
+    width: 16px;
+  }
+  .mission-top button {
+    font-size: 10px;
+    padding: 7px;
+  }
+  #mission-prompt {
+    font-size: 12px;
+    bottom: 175px;
+  }
+}
+
+.game-shell .training {
+  display: none !important;
+}
+/* Function controls need their own full row above the explanatory text. */
+.lil-controller.lil-function.has-setting-help > .lil-widget {
+  flex: 0 0 100%;
+  width: 100%;
+  min-height: 26px;
+}
+.lil-controller.lil-function.has-setting-help button {
+  width: 100%;
+  min-height: 24px;
+}
+.lil-controller.lil-function.has-setting-help .lil-name {
+  width: auto;
+  white-space: normal;
+}
+.game-shell .lil-gui.lil-root {
+  top: 65px !important;
+}
+/* Keep the top-right settings toggle reachable above the pause dialogue. */
+#mission-hud {
+  z-index: 30;
+}

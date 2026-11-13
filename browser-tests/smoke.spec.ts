@@ -4,7 +4,7 @@ test("renders physics sandbox and keyboard movement, jump, crouch, reset", async
 }) => {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
-  await page.goto("./");
+  await page.goto("./?lab");
   await page.waitForFunction(() => (window as any).nebula?.ready);
   await page.waitForFunction(() => (window as any).nebula.grounded);
   const before = await page.evaluate(() => (window as any).nebula.position);

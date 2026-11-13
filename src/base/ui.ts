@@ -271,10 +271,13 @@ export function baseUI(
   info.append(record);
   sources.$children.append(info);
   function target(p: { x: number; y: number; z: number }) {
-    if (Math.abs(p.y) > 1) return "";
-    const a = Math.hypot(p.x - ARRAY_POSITION.x, p.z - ARRAY_POSITION.z),
+    if (Math.abs(p.y) > 1.5) return "";
+    const a = Math.min(
+        Math.hypot(p.x - ARRAY_POSITION.x, p.z - (ARRAY_POSITION.z - 2)),
+        Math.hypot(p.x - ARRAY_POSITION.x, p.z - ARRAY_POSITION.z),
+      ),
       o = Math.hypot(p.x + 2, p.z - 2),
-      range = saved.interactionRange;
+      range = Math.max(3, saved.interactionRange);
     return a <= range && a <= o ? "array" : o <= range ? "oxygen" : "";
   }
   function render() {
@@ -338,6 +341,18 @@ export function baseUI(
       );
   }
   return {
+    start,
+    pause,
+    resume() {
+      sim.resume();
+      last = performance.now();
+    },
+    stop() {
+      pause();
+      active = false;
+      host.hidden = true;
+      document.body.classList.remove("base-active");
+    },
     get active() {
       return active;
     },

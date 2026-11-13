@@ -229,9 +229,11 @@ export function describePanel(gui: GUI) {
       if (folder.$title.textContent?.includes("Base ·")) base = true;
     }
     const key = String(c.property);
-    const description = base
-      ? ((baseHelp as Record<string, string>)[key] ?? baseActions[key])
-      : ((generalHelp as Record<string, string>)[key] ?? actionHelp[key]);
+    const description =
+      c.$name.title ||
+      (base
+        ? ((baseHelp as Record<string, string>)[key] ?? baseActions[key])
+        : ((generalHelp as Record<string, string>)[key] ?? actionHelp[key]));
     if (!description)
       throw Error(
         `Missing setting description: ${base ? "base" : "general"}.${key}`,

@@ -115,6 +115,7 @@ describe("seven-sol engineering model", () => {
   it("is survivable for seven sols with cleaning and shelter, without exceeding the physical dose limit", () => {
     const s = make();
     for (let i = 0; i < 7 * 24 * 4 && s.state === "running"; i++) {
+      if (s.nourishment < 65) s.harvest();
       s.advance(SOL_SECONDS / 96, true);
       if (i % 96 === 0) s.clean(4, true);
     }

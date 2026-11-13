@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 test("optional training toggles unit, pauses, restarts and exits", async ({
   page,
 }) => {
-  await page.goto("./");
+  await page.goto("./?lab");
   await page.waitForFunction(() => (window as any).nebula?.ready);
   await page.locator("#training-start").click();
   await expect(page.locator("#training-status")).toContainText("running");
@@ -47,7 +47,7 @@ test("optional training toggles unit, pauses, restarts and exits", async ({
 test("editing pauses, applying restarts and depletion gives retry feedback", async ({
   page,
 }) => {
-  await page.goto("./");
+  await page.goto("./?lab");
   await page.waitForFunction(() => (window as any).nebula?.ready);
   await page.locator("#training-start").click();
   await page.locator(".lil-gui.lil-root > .lil-title").click();
