@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Nebula · Mars field lab</title>
+  </head>
+  <body>
+    <main id="app">
+      <canvas
+        id="world"
+        tabindex="0"
+        aria-label="Mars movement sandbox"
+      ></canvas>
+      <header>
+        <span class="eyebrow">NEBULA / FIELD LAB 01</span>
+        <h1>A little closer<br />to Mars.</h1>
+        <p>Movement & camera sandbox · no mission yet</p>
+      </header>
+      <section class="readout">
+        <span class="dot"></span>
+        <span id="status" role="status">Preparing the surface…</span>
+      </section>
+      <footer>
+        <div>
+          <b>EXPLORE THE SURFACE</b>
+          <p>
+            WASD / arrows · Move &nbsp; Shift · Run &nbsp; Space · Jump<br />C ·
+            Crouch &nbsp; E · Interact &nbsp; R · Reset
+          </p>
+        </div>
+        <div class="tag">
+          MARS GRAVITY<br /><strong id="gravity">3.71 m/s²</strong>
+        </div>
+      </footer>
+      <aside id="hint">Keyboard first. Touch controls will arrive later.</aside>
+      <div id="notice" role="alert"></div>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
