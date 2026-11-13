@@ -100,6 +100,9 @@ test("shelter entry requires walking through its open side", async ({
     .toBeGreaterThan(5.5);
   await page.keyboard.up("KeyD");
   await page.keyboard.up("KeyS");
+  const outsideStress = await page.evaluate(
+    () => (window as any).nebula.base.stress,
+  );
   await page.keyboard.down("KeyA");
   await page.keyboard.down("KeyS");
   await expect
@@ -112,4 +115,12 @@ test("shelter entry requires walking through its open side", async ({
   await expect(page.locator("#base-location")).toContainText(
     "Inside storm shelter",
   );
+  const received = await page.evaluate(() => (window as any).nebula.base.dose);
+  await expect
+    .poll(() => page.evaluate(() => (window as any).nebula.base.stress))
+    .toBeLessThan(outsideStress);
+  expect(
+    await page.evaluate(() => (window as any).nebula.base.dose),
+  ).toBeGreaterThanOrEqual(received);
+  await expect(page.locator("#base-stress-block")).toContainText("fictional");
 });

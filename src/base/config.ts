@@ -37,6 +37,9 @@ export const baseDefaults = {
   eventHours: 8,
   warningHours: 6,
   doseLimitMGy: 5,
+  stressEnabled: true,
+  stressPerMGy: 15,
+  stressRecoveryPerHour: 6,
   baselineTransmission: 0.7,
   eventTransmission: 0.2,
   shelterX: 6,
@@ -84,6 +87,9 @@ export const limits: Record<keyof BaseConfig, [number, number, number]> = {
   eventHours: [0.1, 100, 0.1],
   warningHours: [0, 100, 0.1],
   doseLimitMGy: [0.001, 1000, 0.1],
+  stressEnabled: [0, 1, 1],
+  stressPerMGy: [0, 100, 0.1],
+  stressRecoveryPerHour: [0, 100, 0.1],
   baselineTransmission: [0, 1, 0.01],
   eventTransmission: [0, 1, 0.01],
   shelterX: [-12, 12, 0.1],
@@ -98,6 +104,11 @@ export function validateBase(input: unknown): BaseConfig {
   const s = { ...baseDefaults };
   for (const k of Object.keys(s) as (keyof BaseConfig)[]) {
     const v = (input as Record<string, unknown>)[k];
+    if (
+      v === undefined &&
+      ["stressEnabled", "stressPerMGy", "stressRecoveryPerHour"].includes(k)
+    )
+      continue;
     if (typeof v !== typeof s[k]) throw Error(`Invalid ${k}`);
     if (
       typeof v === "number" &&

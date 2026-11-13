@@ -66,6 +66,7 @@ export class BaseSimulation {
   battery: number;
   oxygen: number;
   dose = 0;
+  stress = 0;
   dust: number;
   generator = true;
   generatorPowered = false;
@@ -212,7 +213,24 @@ export class BaseSimulation {
         }
         if (this.state !== "running") break;
       }
-      this.dose += doseBetween(this.elapsed, this.elapsed + dt, c, sheltered);
+      const incomingDose = doseBetween(
+        this.elapsed,
+        this.elapsed + dt,
+        c,
+        sheltered,
+      );
+      this.dose += incomingDose;
+      this.stress = c.stressEnabled
+        ? Math.max(
+            0,
+            Math.min(
+              100,
+              this.stress +
+                incomingDose * c.stressPerMGy -
+                (sheltered ? (c.stressRecoveryPerHour * dt) / 3600 : 0),
+            ),
+          )
+        : 0;
       this.oxygen = Math.max(
         0,
         Math.min(c.oxygenCapacity, this.oxygen + oxygenRate * dt),

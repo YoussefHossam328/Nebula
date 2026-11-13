@@ -303,6 +303,7 @@ async function start() {
               battery: base.sim.battery,
               oxygen: base.sim.oxygen,
               dose: base.sim.dose,
+              stress: base.sim.stress,
               cleanProgress: base.sim.cleanProgress,
               cleanCount: base.sim.cleanCount,
               sheltered: base.sim.inShelter,

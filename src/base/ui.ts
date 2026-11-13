@@ -30,7 +30,11 @@ export function baseUI(
   host.className = "base-hud";
   host.hidden = true;
   host.setAttribute("aria-label", "Seven-sol base operations");
-  host.innerHTML = `<b>NEBULA / BASE OPERATIONS</b><p id="base-clock"></p><div class="base-actions"><button id="base-pause">Pause</button><button id="base-restart">Restart scenario</button><button id="base-exit">Exit to sandbox</button></div><div class="base-meters"><label>Battery <meter id="base-energy" min="0" max="100"></meter><span id="base-energy-text"></span></label><label>Oxygen reserve <meter id="base-oxygen" min="0" max="100"></meter><span id="base-oxygen-text"></span></label><label>Accumulated exposure · mGy <meter id="base-dose" min="0" max="100"></meter><span id="base-dose-text"></span></label></div><p id="base-power"></p><p id="base-location"></p><p id="base-exposure-note" class="base-source"></p><p id="base-event" role="status"></p><p id="base-prompt"></p><progress id="base-clean" max="1" value="0" aria-label="Cleaning progress"></progress><p id="base-outcome" role="status"></p><p class="base-source">Historical dose anchor + reconstructed timing. Settings → Base / Sources.</p>`;
+  host.innerHTML = `<b>NEBULA / BASE OPERATIONS</b><p id="base-clock"></p><div class="base-actions"><button id="base-pause">Pause</button><button id="base-restart">Restart scenario</button><button id="base-exit">Exit to sandbox</button></div><div class="base-meters"><label>Battery <meter id="base-energy" min="0" max="100"></meter><span id="base-energy-text"></span></label><label>Oxygen reserve <meter id="base-oxygen" min="0" max="100"></meter><span id="base-oxygen-text"></span></label><label>Accumulated exposure · mGy <meter id="base-dose" min="0" max="100"></meter><span id="base-dose-text"></span></label></div><div id="base-stress-block"><label>Radiation stress · fictional game meter <meter id="base-stress" min="0" max="100"></meter><span id="base-stress-text"></span></label></div><p id="base-power"></p><p id="base-location"></p><p id="base-exposure-note" class="base-source"></p><p id="base-event" role="status"></p><p id="base-prompt"></p><progress id="base-clean" max="1" value="0" aria-label="Cleaning progress"></progress><p id="base-outcome" role="status"></p><p class="base-source">Historical dose anchor + reconstructed timing. Settings → Base / Sources.</p>`;
+  host
+    .querySelector("#base-dose")!
+    .closest("label")!
+    .before(host.querySelector("#base-stress-block")!);
   document.body.append(host);
   const el = (id: string) => host.querySelector<HTMLElement>("#" + id)!;
   const settingsMessage = document.createElement("p");
@@ -176,6 +180,10 @@ export function baseUI(
       ],
     ],
     [
+      "Recovery · fictional stress",
+      ["stressEnabled", "stressPerMGy", "stressRecoveryPerHour"],
+    ],
+    [
       "Shelter · metres / transmission",
       [
         "shelterX",
@@ -256,7 +264,7 @@ export function baseUI(
   sources.close();
   const info = document.createElement("div");
   info.className = "base-methods";
-  info.innerHTML = `<p>Radiation is RAD-reference absorbed exposure (mGy), not mSv or a human medical assessment. The 5 mGy limit is an editable operational game rule, not a lethal-dose claim.</p><p>May 20, 2024: NASA/JPL reports 8,100 µGy = 8.1 mGy. Our triangular 8-hour curve is reconstructed, not measured. Background is included in this event total once; modeled shielding changes exposure.</p><p>Baseline 0.21 mGy/Earth-day: Curiosity surface plastic-detector/tissue-reference value reported by Hassler et al. (2014), Science, doi:10.1126/science.1244797. Not a constant for every Mars site or season.</p><p>Solar irradiance, dust, equipment efficiencies and shielding transmission are editable assumptions. Oxygen production is a simplified CO₂-processing plant; 30 kWh/kg at default settings is a gameplay hardware assumption, not MOXIE's measured specification. Feedstock is assumed available.</p><p>Automatic load shedding preserves essential base/occupied shelter loads before oxygen production. Passive shielding persists without electricity. Unserved electrical demand is reported; no unmodeled instantaneous death is invented.</p><p><a href="https://www.jpl.nasa.gov/news/nasa-watches-mars-light-up-during-epic-solar-storm/" target="_blank" rel="noopener">NASA/JPL event reference</a> · <a href="https://doi.org/10.1126/science.1244797" target="_blank" rel="noopener">RAD surface paper</a> · <a href="https://pds-ppi.igpp.ucla.edu/data/MSL-M-RAD-3-RDR-V1.0/" target="_blank" rel="noopener">RAD archive</a></p>`;
+  info.innerHTML = `<p>Radiation stress is a fictional recoverable game meter, not a NASA dose measurement or biological prediction. Stress gain per mGy and recovery per sheltered simulation hour are editable game-balance values. Reaching 100% is a warning, not an additional loss rule. The physical dose limit still applies independently.</p><p>Radiation is RAD-reference absorbed exposure (mGy), not mSv or a human medical assessment. The 5 mGy limit is an editable operational game rule, not a lethal-dose claim.</p><p>May 20, 2024: NASA/JPL reports 8,100 µGy = 8.1 mGy. Our triangular 8-hour curve is reconstructed, not measured. Background is included in this event total once; modeled shielding changes exposure.</p><p>Baseline 0.21 mGy/Earth-day: Curiosity surface plastic-detector/tissue-reference value reported by Hassler et al. (2014), Science, doi:10.1126/science.1244797. Not a constant for every Mars site or season.</p><p>Solar irradiance, dust, equipment efficiencies and shielding transmission are editable assumptions. Oxygen production is a simplified CO₂-processing plant; 30 kWh/kg at default settings is a gameplay hardware assumption, not MOXIE's measured specification. Feedstock is assumed available.</p><p>Automatic load shedding preserves essential base/occupied shelter loads before oxygen production. Passive shielding persists without electricity. Unserved electrical demand is reported; no unmodeled instantaneous death is invented.</p><p><a href="https://www.jpl.nasa.gov/news/nasa-watches-mars-light-up-during-epic-solar-storm/" target="_blank" rel="noopener">NASA/JPL event reference</a> · <a href="https://doi.org/10.1126/science.1244797" target="_blank" rel="noopener">RAD surface paper</a> · <a href="https://pds-ppi.igpp.ucla.edu/data/MSL-M-RAD-3-RDR-V1.0/" target="_blank" rel="noopener">RAD archive</a></p>`;
   const record = document.createElement("p");
   record.textContent = `DONKI archived context: ${context.records.length} record(s); ${context.status}; retrieved ${context.retrievedAt ?? "not fetched"}. Context only, not a Mars dosimeter.`;
   info.append(record);
@@ -293,6 +301,15 @@ export function baseUI(
       (sim.dose / c.doseLimitMGy) * 100,
       `${sim.dose.toFixed(3)} / ${c.doseLimitMGy.toFixed(2)} mGy · ${doseRate(sim.elapsed, c, sim.inShelter).toFixed(3)} mGy/h`,
     );
+    el("base-stress-block").hidden = !c.stressEnabled;
+    const stressRate =
+      doseRate(sim.elapsed, c, sim.inShelter) * c.stressPerMGy -
+      (sim.inShelter ? c.stressRecoveryPerHour : 0);
+    pct(
+      "base-stress",
+      sim.stress,
+      `${sim.stress.toFixed(1)}% · ${sim.state !== "running" ? "paused" : sim.inShelter && stressRate < 0 ? "recovering in shelter" : stressRate > 0 ? "rising" : "stable"}`,
+    );
     el("base-power").textContent =
       `PV ${f.pv.toFixed(0)} W · load ${f.load.toFixed(0)} W · net ${(f.pv - f.load).toFixed(0)} W · unmet ${f.unserved.toFixed(0)} W`;
     el("base-location").textContent =
@@ -302,7 +319,7 @@ export function baseUI(
     const reduction =
       outsideRate > 0 ? (1 - shelteredRate / outsideRate) * 100 : 0;
     el("base-exposure-note").textContent = sim.inShelter
-      ? `Shelter reduces incoming dose rate by ${reduction.toFixed(0)}%. Previously absorbed dose remains.`
+      ? `Shelter reduces incoming dose rate by ${reduction.toFixed(0)}%. Previously absorbed dose remains; the separate stress meter can recover.`
       : "Accumulated dose does not decay. Enter the storm shelter to reduce incoming exposure.";
     el("base-event").textContent = sim.eventState();
     (el("base-clean") as HTMLProgressElement).value =

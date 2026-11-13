@@ -138,6 +138,12 @@ export const baseHelp: Record<Exclude<keyof BaseConfig, "version">, string> = {
     "Reconstructed particle-event duration in simulation hours; not a measured NASA time curve.",
   warningHours:
     "Simulation hours of advance warning before particle-event onset.",
+  stressEnabled:
+    "Show and simulate a separate fictional recoverable stress meter. Physical dose is always cumulative and keeps its existing loss limit.",
+  stressPerMGy:
+    "Fictional stress percentage points gained per mGy received. Not a NASA health model.",
+  stressRecoveryPerHour:
+    "Fictional stress points removed per sheltered simulation hour, while incoming exposure can still add stress. Does not erase physical dose.",
   doseLimitMGy:
     "Accumulated mGy that immediately loses the run. An operational game rule, not a lethal medical dose.",
   baselineTransmission:

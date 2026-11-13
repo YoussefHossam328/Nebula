@@ -12,7 +12,18 @@ test("loads supplied player, maps locomotion without root travel and decodes all
   );
   expect(
     await page.evaluate(() => (window as any).nebula.model.clipNames),
-  ).toHaveLength(2);
+  ).toHaveLength(4);
+  await page.waitForFunction(
+    () => (window as any).nebula.model.state === "idle",
+  );
+  expect(
+    await page.evaluate(() => (window as any).nebula.model.activeClip),
+  ).toBe("Idle");
+  expect(
+    await page.evaluate(
+      () => (window as any).nebula.model.missingAuthoredClips,
+    ),
+  ).not.toContain("idle");
   await page.keyboard.down("KeyD");
   await page.waitForFunction(
     () => (window as any).nebula.model.state === "walk",

@@ -12,8 +12,8 @@ export const assets = {
     offset: [0, 0, 0],
     clips: {
       idle: "Idle",
-      walk: "mixamo.com",
-      run: "mixamo.com",
+      walk: "walk again",
+      run: "walk again",
       jump: "Jump",
       crouch: "Crouch",
     },

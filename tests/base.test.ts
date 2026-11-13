@@ -144,3 +144,43 @@ describe("seven-sol engineering model", () => {
     expect(s.elapsed).toBeCloseTo((0.001 / defaults.oxygenConsumption) * 3600);
   });
 });
+it("recovers fictional stress in shelter without erasing physical dose or changing loss rules", () => {
+  const s = make({ eventDoseMGy: 0, doseLimitMGy: 100 });
+  s.stress = 60;
+  s.advance(3600, false);
+  expect(s.stress).toBeGreaterThan(60);
+  const beforeStress = s.stress,
+    beforeDose = s.dose;
+  s.advance(3600, true);
+  expect(s.stress).toBeLessThan(beforeStress);
+  expect(s.dose).toBeGreaterThan(beforeDose);
+  expect(s.state).toBe("running");
+  s.pause();
+  const paused = s.stress;
+  s.advance(3600, true);
+  expect(s.stress).toBe(paused);
+});
+it("clamps fictional stress and supports disabling and old base exports", () => {
+  const s = make({
+    stressPerMGy: 100,
+    baselineMGyPerDay: 10,
+    doseLimitMGy: 100,
+  });
+  s.stress = 99;
+  s.advance(3600, false);
+  expect(s.stress).toBe(100);
+  expect(s.state).toBe("running");
+  const disabled = make({ stressEnabled: false });
+  disabled.stress = 50;
+  disabled.advance(60);
+  expect(disabled.stress).toBe(0);
+  const old = { ...defaults };
+  delete (old as Record<string, unknown>).stressEnabled;
+  delete (old as Record<string, unknown>).stressPerMGy;
+  delete (old as Record<string, unknown>).stressRecoveryPerHour;
+  expect(validateBase(old)).toMatchObject({
+    stressEnabled: true,
+    stressPerMGy: 15,
+    stressRecoveryPerHour: 6,
+  });
+});
