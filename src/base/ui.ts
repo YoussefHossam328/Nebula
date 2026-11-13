@@ -342,6 +342,7 @@ export function baseUI(
   }
   return {
     start,
+    target,
     pause,
     resume() {
       sim.resume();

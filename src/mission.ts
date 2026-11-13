@@ -388,7 +388,12 @@ export function mission(
       }
       return true;
     }
-    if (Math.hypot(p.x + 2, p.z - 2) < 2.5) toggles++;
+    if (base.target(p) === "oxygen") {
+      const before = base.sim.generator;
+      base.interact(p);
+      if (before !== base.sim.generator) toggles++;
+      return true;
+    }
     return false;
   }
   f
