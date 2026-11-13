@@ -110,7 +110,7 @@ footer p {
   --title-background-color: #30241e;
   --font-size: 11px;
 }
-.lil-gui.root {
+.lil-gui.lil-root {
   top: 20px !important;
   right: 20px !important;
 }
@@ -145,7 +145,7 @@ footer p {
   #hint {
     left: 20px;
   }
-  .lil-gui.root {
+  .lil-gui.lil-root {
     width: 250px !important;
     top: 10px !important;
     right: 10px !important;
@@ -217,4 +217,28 @@ footer p {
     width: 260px;
     max-height: 35vh;
   }
+}
+.lil-gui.lil-root {
+  max-height: calc(100dvh - 24px);
+  overflow-y: auto;
+}
+.lil-gui details {
+  padding: 8px;
+  font-size: 11px;
+}
+.lil-gui form label {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 6px 0;
+}
+.lil-gui form input {
+  width: 100px;
+}
+.lil-gui details button {
+  display: block;
+  margin: 8px 0;
+}
+.lil-gui summary {
+  cursor: pointer;
 }

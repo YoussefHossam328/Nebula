@@ -19,7 +19,7 @@ export async function training(clearInput: () => void) {
   let level = "";
   host.innerHTML = `<b>OUTPOST / RESOURCE TRAINING</b><p class="source"></p><p>Making oxygen uses battery power. Keep both above zero until the training timer ends.</p><div class="meters"><label>Battery <meter id="battery-meter" min="0" max="100"></meter><span id="battery-text"></span></label><label>Oxygen reserve <meter id="oxygen-meter" min="0" max="100"></meter><span id="oxygen-text"></span></label></div><p id="training-status" aria-live="polite"></p><p id="training-prompt"></p><div class="training-actions"><button id="training-start">Start resource training</button><button id="training-pause">Pause</button><button id="training-restart">Restart training</button><button id="training-exit">Exit training</button></div><details><summary>About this model / resource settings</summary><p>Fictional training units, not NASA measurements. Reserves belong to an abstract outpost, not your suit. The oxygen maker requires electricity and an assumed available feedstock. No recharging occurs during this short exercise. Movement does not affect consumption.</p><p>Editing pauses training. Apply restarts with your new settings.</p><form id="resource-form"></form><button id="resource-export">Export resource settings</button><button id="resource-import">Import resource settings</button><button id="resource-reset">Default resource settings</button></details><p id="resource-message" role="status"></p>`;
   host.querySelector(".source")!.textContent = source.attribution;
-  const el = (id: string) => host.querySelector<HTMLElement>("#" + id)!;
+  const el = (id: string) => document.getElementById(id)!;
   const message = (s: string) => {
     el("resource-message").textContent = s;
   };
@@ -60,8 +60,9 @@ export async function training(clearInput: () => void) {
     if (document.hidden) pause();
   });
   host.addEventListener("focusin", () => clearInput());
-  host.querySelector("details")!.addEventListener("toggle", () => {
-    if (host.querySelector("details")!.open) pause();
+  const details = host.querySelector("details")!;
+  details.addEventListener("toggle", () => {
+    if (details.open) pause();
   });
   const form = host.querySelector<HTMLFormElement>("form")!;
   const keys = [
@@ -204,6 +205,9 @@ export async function training(clearInput: () => void) {
   }
   render();
   return {
+    mountSettings(container: HTMLElement) {
+      container.append(host.querySelector("details")!);
+    },
     tick(now: number) {
       if (document.hidden) {
         pause();

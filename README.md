@@ -44,3 +44,9 @@ Choose **Start resource training**, then click the scene to focus keyboard contr
 The two-minute exercise uses **fictional training data**, not live NASA measurements. Percentages describe abstract outpost reserves, not suit endurance or physical litres/kWh. The model assumes feedstock is available and no recharging occurs. Open **About this model / resource settings** to edit rates and capacities, apply and restart, or import/export resource JSON. These settings are stored separately from movement settings. Session progress is not saved. All future scientific observations must retain source metadata and be translated into supported model inputs; no NASA API is connected yet.
 
 `src/data/scenario.json` contains the fixture; `src/resources/simulation.ts` is the deterministic model. The defaults allow 40 seconds of oxygen production followed by 80 seconds off to finish with 10 battery and 11 oxygen units. Leaving it always on or always off fails. Resource tests cover rates, terminal boundaries, frame independence, pause and validation.
+
+## Unified settings and camera
+
+All tuning is in the **Settings** panel at the top right: Movement, Physics, Camera framing, Camera follow, Camera shake, Rendering, Resources, and Presets/files. Resource model details and import/export have moved there from the left HUD. Training operations remain with the HUD.
+
+`followDelay` is in seconds. `smoothing` is responsiveness (higher catches up faster). The camera uses the same filtered target for position and aim, and character rendering interpolates physics steps. Reset/teleport clears the follow history. Shake starts disabled; enable it to use the landing trigger or Preview shake. Strength is in metres, frequency in Hz, duration in seconds. Existing saved movement settings automatically receive the new defaults. More ambitious energy and radiation systems are proposed in `EXPANDED_SYSTEMS_PLAN.md` and await scope decisions.

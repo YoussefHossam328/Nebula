@@ -5,7 +5,7 @@ export function panel(
   changed: () => void,
   notice: (text: string) => void,
 ) {
-  const gui = new GUI({ title: "Field lab · tuning", width: 290 });
+  const gui = new GUI({ title: "Settings", width: 330 });
   gui.close();
   const ranges: Record<string, [number, number, number]> = {
     gravity: [0.1, 30, 0.01],
@@ -28,6 +28,10 @@ export function panel(
     fov: [20, 90, 1],
     targetHeight: [0, 3, 0.05],
     smoothing: [0.1, 20, 0.1],
+    followDelay: [0, 1, 0.01],
+    shakeStrength: [0, 0.3, 0.01],
+    shakeFrequency: [1, 30, 1],
+    shakeDuration: [0.05, 2, 0.01],
     resolution: [0.5, 2, 0.1],
   };
   let previous = { ...s };
@@ -76,18 +80,26 @@ export function panel(
     ],
     [
       "Camera · degrees / metres",
-      ["yaw", "pitch", "distance", "fov", "targetHeight", "smoothing"],
+      ["yaw", "pitch", "distance", "fov", "targetHeight"],
+    ],
+    ["Camera · follow", ["smoothing", "followDelay"]],
+    [
+      "Camera · shake",
+      ["shakeEnabled", "shakeStrength", "shakeFrequency", "shakeDuration"],
     ],
     ["Rendering", ["resolution", "shadows"]],
   ] as const;
   for (const [name, keys] of groups) {
     const folder = gui.addFolder(name);
     for (const key of keys) {
-      if (key === "shadows") folder.add(s, key).onFinishChange(commit);
+      if (key === "shadows" || key === "shakeEnabled")
+        folder.add(s, key).onFinishChange(commit);
       else folder.add(s, key, ...ranges[key]).onFinishChange(commit);
     }
     folder.close();
   }
+  const files = gui.addFolder("Presets and files");
+  files.close();
   const file = document.createElement("input");
   file.type = "file";
   file.accept = ".json";
@@ -106,7 +118,7 @@ export function panel(
     }
     file.value = "";
   };
-  gui
+  files
     .add(
       {
         reset() {
@@ -118,7 +130,7 @@ export function panel(
       "reset",
     )
     .name("Reset defaults");
-  gui
+  files
     .add(
       {
         export() {
@@ -135,7 +147,7 @@ export function panel(
       "export",
     )
     .name("Export settings");
-  gui
+  files
     .add(
       {
         import() {
@@ -145,7 +157,7 @@ export function panel(
       "import",
     )
     .name("Import settings");
-  gui
+  files
     .add(
       {
         low() {
@@ -158,7 +170,7 @@ export function panel(
       "low",
     )
     .name("Low quality");
-  gui
+  files
     .add(
       {
         standard() {
@@ -171,4 +183,5 @@ export function panel(
       "standard",
     )
     .name("Standard quality");
+  return gui;
 }

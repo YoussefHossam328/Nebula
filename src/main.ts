@@ -5,6 +5,7 @@ import { Input } from "./input";
 import { Character, DT } from "./physics";
 import { createWorld } from "./world";
 import { astronaut } from "./assets";
+import { FollowCamera } from "./camera";
 import { panel } from "./settings";
 import "./style.css";
 import { training } from "./resources/ui";
@@ -52,10 +53,13 @@ async function start() {
   } catch (e) {
     notice("Training unavailable; sandbox is available. " + String(e));
   }
-  const target = new THREE.Vector3(),
-    desired = new THREE.Vector3();
-  let initial = true,
-    elapsed = 0,
+  const target = new THREE.Vector3();
+  const follow = new FollowCamera(camera);
+  const previous = new THREE.Vector3();
+  const current = new THREE.Vector3();
+  previous.copy(player.body.translation());
+  current.copy(previous);
+  let elapsed = 0,
     accumulator = 0,
     last = performance.now(),
     frames = 0,
@@ -74,7 +78,16 @@ async function start() {
   }
   resize();
   window.addEventListener("resize", resize);
-  panel(s, resize, notice);
+  const settingsPanel = panel(s, resize, notice);
+  const resourceFolder = settingsPanel.addFolder(
+    "Resources · model and tuning",
+  );
+  resourceFolder.close();
+  resources?.mountSettings(resourceFolder.$children);
+  settingsPanel
+    .addFolder("Camera · preview")
+    .add({ shake: () => follow.shake(s) }, "shake")
+    .name("Preview shake (enable first)");
   function frame(now: number) {
     requestAnimationFrame(frame);
     const dt = Math.min((now - last) / 1000, 0.1);
@@ -88,7 +101,14 @@ async function start() {
         x: a.x * Math.cos(yaw) - a.z * Math.sin(yaw),
         z: -a.x * Math.sin(yaw) - a.z * Math.cos(yaw),
       };
-      if (input.take("KeyR")) player.reset();
+      if (input.take("KeyR")) {
+        player.reset();
+        follow.reset();
+        current.copy(player.body.translation());
+        previous.copy(current);
+      }
+      previous.copy(current);
+      const wasGrounded = player.grounded;
       player.tick(
         s,
         axis,
@@ -96,6 +116,12 @@ async function start() {
         input.down("KeyC"),
         input.take("Space"),
       );
+      current.copy(player.body.translation());
+      if (current.distanceTo(previous) > 5) {
+        previous.copy(current);
+        follow.reset();
+      }
+      if (!wasGrounded && player.grounded) follow.shake(s);
       accumulator -= DT;
       if (input.take("KeyE")) {
         const p = player.body.translation();
@@ -124,7 +150,12 @@ async function start() {
     area.oxygen.material.color.setHex(
       resources?.state.on ? 0x9ce5b2 : 0x436a69,
     );
-    visual.root.position.set(p.x, p.y - player.height / 2, p.z);
+    const rendered = previous.clone().lerp(current, accumulator / DT);
+    visual.root.position.set(
+      rendered.x,
+      rendered.y - player.height / 2,
+      rendered.z,
+    );
     visual.root.scale.y = player.height / s.standing;
     if (Math.hypot(player.vx, player.vz) > 0.1)
       visual.root.rotation.y = Math.atan2(player.vx, player.vz);
@@ -140,23 +171,12 @@ async function start() {
               ? "walk"
               : "idle",
     );
-    target.set(p.x, p.y - player.height / 2 + s.targetHeight, p.z);
-    const yaw = (s.yaw * Math.PI) / 180,
-      pitch = (s.pitch * Math.PI) / 180;
-    desired
-      .set(
-        Math.sin(yaw) * Math.cos(pitch),
-        Math.sin(pitch),
-        Math.cos(yaw) * Math.cos(pitch),
-      )
-      .multiplyScalar(s.distance)
-      .add(target);
-    camera.position.lerp(
-      desired,
-      initial ? 1 : 1 - Math.exp(-s.smoothing * dt),
+    target.set(
+      rendered.x,
+      rendered.y - player.height / 2 + s.targetHeight,
+      rendered.z,
     );
-    camera.lookAt(target);
-    initial = false;
+    follow.update(target, dt, elapsed, s);
     area.ring.rotation.z = elapsed * 0.3;
     renderer.render(scene, camera);
     frames++;

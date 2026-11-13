@@ -19,6 +19,11 @@ export const defaults = {
   fov: 40,
   targetHeight: 0.8,
   smoothing: 7,
+  followDelay: 0.12,
+  shakeEnabled: false,
+  shakeStrength: 0.06,
+  shakeFrequency: 14,
+  shakeDuration: 0.25,
   resolution: 1.5,
   shadows: true,
 };
@@ -30,6 +35,17 @@ export function validate(input: unknown): Settings {
   const obj = input as Record<string, unknown>;
   for (const key of Object.keys(defaults) as (keyof Settings)[]) {
     const v = obj[key];
+    if (
+      v === undefined &&
+      [
+        "followDelay",
+        "shakeEnabled",
+        "shakeStrength",
+        "shakeFrequency",
+        "shakeDuration",
+      ].includes(key)
+    )
+      continue;
     if (typeof v !== typeof defaults[key]) throw Error(`Invalid ${key}`);
     if (typeof v === "number" && !Number.isFinite(v))
       throw Error(`Invalid ${key}`);
@@ -56,6 +72,10 @@ export function validate(input: unknown): Settings {
     fov: [20, 90],
     targetHeight: [0, 3],
     smoothing: [0.1, 20],
+    followDelay: [0, 1],
+    shakeStrength: [0, 0.3],
+    shakeFrequency: [1, 30],
+    shakeDuration: [0.05, 2],
     resolution: [0.5, 2],
   };
   for (const [k, [min, max]] of Object.entries(ranges)) {

@@ -50,7 +50,9 @@ test("editing pauses, applying restarts and depletion gives retry feedback", asy
   await page.goto("./");
   await page.waitForFunction(() => (window as any).nebula?.ready);
   await page.locator("#training-start").click();
-  await page.locator(".training summary").click();
+  await page.locator(".lil-gui.lil-root > .lil-title").click();
+  await page.getByText("Resources · model and tuning", { exact: true }).click();
+  await page.locator(".lil-gui summary").click();
   await expect(page.locator("#training-status")).toContainText("paused");
   await page.locator('input[name="duration"]').fill("2");
   await page.locator('input[name="oxygen"]').fill("0.1");
@@ -64,6 +66,6 @@ test("editing pauses, applying restarts and depletion gives retry feedback", asy
   await expect(page.locator("#training-status")).toContainText(
     "Training complete!",
   );
-  await page.locator(".training summary").click();
+  await page.locator(".lil-gui summary").click();
   await page.screenshot({ path: "test-results/resource-training.png" });
 });
