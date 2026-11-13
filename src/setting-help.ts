@@ -182,7 +182,7 @@ export const legacyHelp: Record<string, string> = {
 };
 const actionHelp: Record<string, string> = {
   previewAudio:
-    "Play the supplied landing sound to test the current audio settings. A click unlocks browser audio.",
+    "Play the synthesized landing sound to test the current audio settings. A click unlocks browser audio.",
   reset:
     "Restore the default movement, camera, station-view and rendering settings.",
   export: "Download movement, camera and rendering settings as JSON.",

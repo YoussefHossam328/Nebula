@@ -189,7 +189,27 @@ export class GameAudio {
   }
   preview() {
     this.unlocked = true;
-    void this.ensure().then(() => this.play("land"));
+    void this.ensure().then(() => {
+      if (!this.context || !this.settings.audioEnabled || document.hidden)
+        return;
+      const buffer = this.buffers.get("land");
+      if (!buffer) return;
+      // Audition independently of the paused world bus, at the configured volumes.
+      const source = this.context.createBufferSource();
+      const gain = this.context.createGain();
+      gain.gain.value =
+        this.settings.masterVolume * this.settings.effectsVolume;
+      source.buffer = buffer;
+      source.connect(gain);
+      gain.connect(this.context.destination);
+      source.onended = () => {
+        source.disconnect();
+        gain.disconnect();
+      };
+      source.start();
+      this.played++;
+      this.lastSound = "land";
+    });
   }
   get status() {
     return {
