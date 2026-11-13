@@ -107,5 +107,7 @@ export function createWorld(scene: THREE.Scene, world: RAPIER.World) {
     mountain.position.set(Math.cos(a) * 44, 1, Math.sin(a) * 44);
     scene.add(mountain);
   }
-  return { beacon, ring };
+  const oxygen = box(0.8, 1.2, 0.8, -2, 0.6, 2, 0x436a69);
+  label("E / O₂ UNIT", -2, 1.9, 2);
+  return { beacon, ring, oxygen };
 }

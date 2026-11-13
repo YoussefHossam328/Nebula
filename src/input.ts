@@ -22,7 +22,10 @@ export class Input {
       if (
         e.target instanceof HTMLInputElement ||
         e.target instanceof HTMLSelectElement ||
-        e.target instanceof HTMLTextAreaElement
+        e.target instanceof HTMLTextAreaElement ||
+        e.target instanceof HTMLButtonElement ||
+        (e.target instanceof Element &&
+          Boolean(e.target.closest(".training, .lil-gui")))
       )
         return;
       if (!codes.includes(e.code)) return;

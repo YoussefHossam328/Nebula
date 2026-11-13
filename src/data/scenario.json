@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "id": "battery-training",
+  "name": "Oxygen on a budget",
+  "duration": 120,
+  "batteryCapacity": 100,
+  "oxygenCapacity": 100,
+  "battery": 70,
+  "oxygen": 35,
+  "backgroundDrain": 0.1,
+  "oxygenConsumption": 0.6,
+  "generatorDrain": 1.2,
+  "oxygenProduction": 1.2,
+  "warning": 25,
+  "critical": 10
+}

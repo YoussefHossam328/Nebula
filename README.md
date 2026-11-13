@@ -36,3 +36,11 @@ For Mixamo animations: download the character once with skin, then each compatib
 ## Limits
 
 Static terrain collisions; decorative rocks/mountains do not collide. Camera collision and fading are deferred: scenery may occlude the character in some positions. No dynamic object pushing, touch/gamepad input, missions, accounts or backend. The renderer currently loads Rapier's bundled WASM; initial download is larger than a render-only demo. Actual phone/browser and GPU testing remains necessary before claiming broad compatibility. Future educational gameplay should implement genuine survival trade-offs and attribute any NASA datasets used, marking archived data honestly.
+
+## Optional resource training
+
+Choose **Start resource training**, then click the scene to focus keyboard control. Walk to the **O₂ unit** and press E to turn production on/off. Oxygen production consumes limited battery power. Pause/Resume, Restart training and Exit training are available in the training panel. Tab hiding or focus loss pauses supplies; resume explicitly. R and falling reset only your position.
+
+The two-minute exercise uses **fictional training data**, not live NASA measurements. Percentages describe abstract outpost reserves, not suit endurance or physical litres/kWh. The model assumes feedstock is available and no recharging occurs. Open **About this model / resource settings** to edit rates and capacities, apply and restart, or import/export resource JSON. These settings are stored separately from movement settings. Session progress is not saved. All future scientific observations must retain source metadata and be translated into supported model inputs; no NASA API is connected yet.
+
+`src/data/scenario.json` contains the fixture; `src/resources/simulation.ts` is the deterministic model. The defaults allow 40 seconds of oxygen production followed by 80 seconds off to finish with 10 battery and 11 oxygen units. Leaving it always on or always off fails. Resource tests cover rates, terminal boundaries, frame independence, pause and validation.

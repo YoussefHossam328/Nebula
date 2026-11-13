@@ -9,7 +9,15 @@ test("renders physics sandbox and keyboard movement, jump, crouch, reset", async
   await page.waitForFunction(() => (window as any).nebula.grounded);
   const before = await page.evaluate(() => (window as any).nebula.position);
   await page.keyboard.down("KeyW");
-  await page.waitForTimeout(1000);
+  await expect
+    .poll(
+      async () => {
+        const p = await page.evaluate(() => (window as any).nebula.position);
+        return Math.hypot(p.x - before.x, p.z - before.z);
+      },
+      { timeout: 10000 },
+    )
+    .toBeGreaterThan(0.6);
   await page.keyboard.up("KeyW");
   const after = await page.evaluate(() => (window as any).nebula.position);
   expect(Math.hypot(after.x - before.x, after.z - before.z)).toBeGreaterThan(
@@ -22,6 +30,14 @@ test("renders physics sandbox and keyboard movement, jump, crouch, reset", async
     .poll(() => page.evaluate(() => (window as any).nebula.crouched))
     .toBe(true);
   await page.keyboard.up("KeyC");
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          (window as any).nebula.grounded && !(window as any).nebula.crouched,
+      ),
+    )
+    .toBe(true);
   await page.keyboard.press("Space");
   await expect
     .poll(() => page.evaluate(() => (window as any).nebula.grounded))

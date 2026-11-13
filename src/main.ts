@@ -7,6 +7,7 @@ import { createWorld } from "./world";
 import { astronaut } from "./assets";
 import { panel } from "./settings";
 import "./style.css";
+import { training } from "./resources/ui";
 const status = document.querySelector<HTMLElement>("#status")!;
 let noticeUntil = 0;
 function notice(text: string) {
@@ -45,6 +46,12 @@ async function start() {
   const visual = await astronaut();
   scene.add(visual.root);
   const input = new Input(canvas);
+  let resources: Awaited<ReturnType<typeof training>> | undefined;
+  try {
+    resources = await training(() => input.clear());
+  } catch (e) {
+    notice("Training unavailable; sandbox is available. " + String(e));
+  }
   const target = new THREE.Vector3(),
     desired = new THREE.Vector3();
   let initial = true,
@@ -92,16 +99,31 @@ async function start() {
       accumulator -= DT;
       if (input.take("KeyE")) {
         const p = player.body.translation();
-        if (Math.hypot(p.x - 3, p.z - 2) <= s.interactionRange) {
-          area.beacon.material = new THREE.MeshStandardMaterial({
-            color: 0x9ce5b2,
-            emissive: 0x236747,
-          });
+        const feet = p.y - player.height / 2;
+        const oxygenDistance = Math.hypot(p.x + 2, p.z - 2);
+        const beaconDistance = Math.hypot(p.x - 3, p.z - 2);
+        const vertical = Math.abs(feet) < 1;
+        if (
+          resources?.active &&
+          vertical &&
+          oxygenDistance <= s.interactionRange &&
+          oxygenDistance <= beaconDistance
+        )
+          resources.interact();
+        else if (vertical && beaconDistance <= s.interactionRange) {
           notice("Beacon checked. Interaction test successful.");
-        } else notice("Move closer to the field beacon to interact.");
+        } else notice("Approach an interaction target.");
       }
     }
     const p = player.body.translation();
+    resources?.tick(now);
+    resources?.prompt(
+      Math.hypot(p.x + 2, p.z - 2) <= s.interactionRange &&
+        Math.abs(p.y - player.height / 2) < 1,
+    );
+    area.oxygen.material.color.setHex(
+      resources?.state.on ? 0x9ce5b2 : 0x436a69,
+    );
     visual.root.position.set(p.x, p.y - player.height / 2, p.z);
     visual.root.scale.y = player.height / s.standing;
     if (Math.hypot(player.vx, player.vz) > 0.1)
@@ -153,6 +175,14 @@ async function start() {
         grounded: player.grounded,
         crouched: player.crouched,
         settings: s,
+        resources: resources
+          ? {
+              state: resources.state.state,
+              battery: resources.state.battery,
+              oxygen: resources.state.oxygen,
+              on: resources.state.on,
+            }
+          : null,
       },
     });
   }
