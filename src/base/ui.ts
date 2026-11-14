@@ -1,3 +1,4 @@
+import { stationLayout } from "../layout";
 import GUI from "lil-gui";
 import {
   baseDefaults,
@@ -276,7 +277,10 @@ export function baseUI(
         Math.hypot(p.x - ARRAY_POSITION.x, p.z - (ARRAY_POSITION.z - 2)),
         Math.hypot(p.x - ARRAY_POSITION.x, p.z - ARRAY_POSITION.z),
       ),
-      o = Math.hypot(p.x + 2, p.z - 2),
+      o = Math.hypot(
+        p.x - stationLayout().oxygen.x,
+        p.z - stationLayout().oxygen.z,
+      ),
       range = Math.max(3, saved.interactionRange);
     return a <= range && a <= o ? "array" : o <= range ? "oxygen" : "";
   }

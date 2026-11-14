@@ -27,3 +27,9 @@ Use the top-right Debug / settings button. This opens the single existing catego
 The default sound design is original Web Audio synthesis: smoothed noise grains for steps/landings and a subdued wind loop, plus a short sine alert when the event status changes. It uses no NASA recordings and no external generation service. The previous user-supplied WAVs remain in the repository but are no longer the default. Master, ambience and effects gains remain editable. Menus/pause mute the scene; shelter attenuates ambience. Playback unlocks after a user gesture.
 
 No external photographs are included in this iteration; curated NASA-only images remain optional. Cutscenes, story, mobile touch controls and full mission save/load remain deferred. Browser viewport tests do not certify 60 FPS on physical phones.
+
+## Supplied three-room base
+
+The normal game now uses the supplied `public/models/Base.glb`, with its reference astronaut removed at runtime. The source file is preserved. The rooms hold a furnished command/living area, an oxygen utility room and two powered crop beds. Building panels use warm neutral materials; floors, signs, lockers, bedding, telemetry displays, supply crates, a nutrient reservoir and grow-light housing provide prototype decoration. Crops use low-poly stems/leaves and retain the existing growth/harvest behavior.
+
+The export has no roof and its building meshes have no assigned texture material. Runtime shell preparation adds a south doorway and opens the farm approach, then builds matching Rapier triangle collision. The bunk sits clear of the connecting passage. The roofless layout stays roofless; the station cutaway setting fades walls when inside. Equipment anchors in `src/layout.ts` are shared with prompts, harvesting and oxygen interaction. The array moves outside the larger base footprint. Legacy `?lab` exercises retain the original station and equipment positions.

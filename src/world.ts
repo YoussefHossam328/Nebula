@@ -1,5 +1,7 @@
 import * as THREE from "three";
 import RAPIER from "@dimforge/rapier3d-compat";
+import { createAuthoredStation } from "./authored-station";
+import { stationLayout } from "./layout";
 import { createStation } from "./station";
 export function createWorld(scene: THREE.Scene, world: RAPIER.World) {
   function box(
@@ -24,7 +26,10 @@ export function createWorld(scene: THREE.Scene, world: RAPIER.World) {
     return m;
   }
   box(32, 1, 32, 0, -0.5, 0, 0xa95e43);
-  const station = createStation(scene, world);
+  const legacy = new URLSearchParams(location.search).has("lab");
+  const station = legacy
+    ? createStation(scene, world)
+    : createAuthoredStation(scene, world);
   function label(text: string, x: number, y: number, z: number) {
     const c = document.createElement("canvas");
     c.width = 512;
@@ -44,8 +49,8 @@ export function createWorld(scene: THREE.Scene, world: RAPIER.World) {
     scene.add(sprite);
     return sprite;
   }
-  label("HABITAT / OPEN ENTRANCE", 0, 3.65, -1);
-  label("BATTERY / CONTROL", -1.8, 2.1, -5.5);
+  if (legacy) label("HABITAT / OPEN ENTRANCE", 0, 3.65, -1);
+  if (legacy) label("BATTERY / CONTROL", -1.8, 2.1, -5.5);
   const beacon = box(0.4, 0.8, 0.4, 3, 0.4, 2, 0x436a69);
   label("E / CONTROL PYLON", 3, 1.35, 2);
   const ring = new THREE.Mesh(
@@ -55,9 +60,10 @@ export function createWorld(scene: THREE.Scene, world: RAPIER.World) {
   ring.rotation.x = -Math.PI / 2;
   ring.position.set(3, 0.05, 2);
   scene.add(ring);
-  const oxygen = box(0.8, 1.2, 0.8, -2, 0.6, 2, 0x436a69);
-  label("E / O₂ PLANT", -2, 1.9, 2);
-  for (const x of [-3, -3.6]) {
+  const op = stationLayout().oxygen;
+  const oxygen = box(0.8, 1.2, 0.8, op.x, 0.6, op.z, 0x436a69);
+  label("E / O₂ PLANT", op.x, 1.9, op.z);
+  for (const x of legacy ? [-3, -3.6] : []) {
     const tank = new THREE.Mesh(
       new THREE.CylinderGeometry(0.22, 0.22, 1.2, 8),
       new THREE.MeshStandardMaterial({ color: 0xc9c8b4 }),

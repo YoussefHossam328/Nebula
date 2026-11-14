@@ -51,6 +51,7 @@ async function start() {
   await RAPIER.init();
   const world = new RAPIER.World({ x: 0, y: 0, z: 0 });
   const area = createWorld(scene, world);
+  if ("ready" in area.station) await area.station.ready;
   const baseScene = baseVisuals(scene, world);
   await baseScene.solarReady;
   const player = new Character(world, s);

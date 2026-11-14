@@ -1,3 +1,5 @@
+import { ARRAY_POSITION } from "./base/visuals";
+import { stationLayout } from "./layout";
 import * as THREE from "three";
 import { eventDefaults, scheduledEvent } from "./events";
 import type GUI from "lil-gui";
@@ -291,9 +293,10 @@ export function mission(
     modified = true;
   }
   const beds = new THREE.Group();
-  beds.position.set(-2, 0, -3);
+  const layout = stationLayout();
+  beds.position.set(layout.farm.x, 0, layout.farm.z);
   scene.add(beds);
-  const leaves: THREE.Mesh[] = [];
+  const leaves: THREE.Group[] = [];
   for (let i = 0; i < 2; i++) {
     const bed = new THREE.Mesh(
       new THREE.BoxGeometry(1.3, 0.5, 1.3),
@@ -301,18 +304,42 @@ export function mission(
     );
     bed.position.set(i * 1.6, 0.25, 0);
     beds.add(bed);
-    const plant = new THREE.Mesh(
-      new THREE.ConeGeometry(0.5, 1, 5),
-      new THREE.MeshStandardMaterial({ color: 0x78ba72 }),
+    const soil = new THREE.Mesh(
+      new THREE.BoxGeometry(1.12, 0.09, 1.12),
+      new THREE.MeshStandardMaterial({ color: 0x433c30 }),
     );
-    plant.position.set(i * 1.6, 1, 0);
+    soil.position.set(i * 1.6, 0.51, 0);
+    beds.add(soil);
+    const plant = new THREE.Group();
+    for (const x of [-0.3, 0.3])
+      for (const z of [-0.3, 0.3]) {
+        const stalk = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.025, 0.035, 0.3, 5),
+          new THREE.MeshStandardMaterial({ color: 0x6c9460 }),
+        );
+        stalk.position.set(x, 0.18, z);
+        plant.add(stalk);
+        for (const side of [-1, 1]) {
+          const leaf = new THREE.Mesh(
+            new THREE.IcosahedronGeometry(0.22, 0),
+            new THREE.MeshStandardMaterial({
+              color: side === 1 ? 0x83b76c : 0x527f4a,
+            }),
+          );
+          leaf.scale.set(1, 0.4, 0.7);
+          leaf.rotation.z = side * 0.4;
+          leaf.position.set(x + side * 0.12, 0.28, z);
+          plant.add(leaf);
+        }
+      }
+    plant.position.set(i * 1.6, 0.55, 0);
     beds.add(plant);
     leaves.push(plant);
     world.createCollider(
       RAPIER.ColliderDesc.cuboid(0.65, 0.25, 0.65).setTranslation(
-        -2 + i * 1.6,
+        layout.farm.x + i * 1.6,
         0.25,
-        -3,
+        layout.farm.z,
       ),
     );
   }
@@ -349,7 +376,7 @@ export function mission(
     new THREE.MeshBasicMaterial({ color: 0xaee7dd, side: THREE.DoubleSide }),
   );
   ring.rotation.x = -Math.PI / 2;
-  ring.position.set(-6, 0.035, 0);
+  ring.position.set(ARRAY_POSITION.x, 0.035, ARRAY_POSITION.z - 2);
   scene.add(ring);
   // Ground the world-space GLB bounds; proxy collision intentionally remains simple.
   new GLTFLoader().load(
@@ -373,7 +400,9 @@ export function mission(
   function interact(p: { x: number; y: number; z: number }) {
     if (mode !== "mission" && mode !== "practice") return false;
     if (Math.abs(p.y) > 1.5) return false;
-    if (Math.hypot(p.x + 1.2, p.z + 3) < 2.5) {
+    if (
+      Math.hypot(p.x - layout.farmTarget.x, p.z - layout.farmTarget.z) < 2.5
+    ) {
       const eaten = base.sim.harvest();
       if (eaten && lesson === 4) complete = true;
       eventText = eaten
@@ -442,7 +471,10 @@ export function mission(
               ["Space", "KeyC"].every((k) => tried.has(k)) &&
               (tried.has("ShiftLeft") || tried.has("ShiftRight"))
             : lesson === 1
-              ? Math.hypot(p.x + 6, p.z) < 3
+              ? Math.hypot(
+                  p.x - ARRAY_POSITION.x,
+                  p.z - (ARRAY_POSITION.z - 2),
+                ) < 3
               : lesson === 2
                 ? base.sim.cleanCount > cleanStart
                 : lesson === 3
@@ -547,11 +579,13 @@ export function mission(
       hud.querySelector("#mission-prompt")!.textContent =
         mode === "practice"
           ? lessons[lesson][2]
-          : Math.hypot(p.x + 1.2, p.z + 3) < 2.5
+          : Math.hypot(p.x - layout.farmTarget.x, p.z - layout.farmTarget.z) <
+              2.5
             ? `E · Eat crop / auto replant · beds ${base.sim.crops.map((v) => Math.round(v * 100) + "%").join(" / ")} · ${base.sim.flows().cropsPowered ? "growing" : "ready or power unavailable"}`
-            : Math.hypot(p.x + 6, p.z) < 3
+            : Math.hypot(p.x - ARRAY_POSITION.x, p.z - (ARRAY_POSITION.z - 2)) <
+                3
               ? `Hold E · Clean array ${Math.round((base.sim.cleanProgress / base.sim.config.cleanSeconds) * 100)}%`
-              : Math.hypot(p.x + 2, p.z - 2) < 2.5
+              : Math.hypot(p.x - layout.oxygen.x, p.z - layout.oxygen.z) < 2.5
                 ? "E · Toggle oxygen maker"
                 : Math.hypot(p.x - 3, p.z - 2) < 2.5
                   ? "E · Send station report"

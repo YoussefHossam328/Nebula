@@ -5,12 +5,16 @@ import RAPIER from "@dimforge/rapier3d-compat";
 import type { BaseConfig } from "./config";
 import { loadSolarModel } from "./solar-model";
 import { sunlight } from "./model";
-export const ARRAY_POSITION = { x: -6, y: 0, z: 2 };
+export const ARRAY_POSITION =
+  typeof location !== "undefined" &&
+  new URLSearchParams(location.search).has("lab")
+    ? { x: -6, y: 0, z: 2 }
+    : { x: -8, y: 0, z: 5 };
 export function baseVisuals(scene: THREE.Scene, world: RAPIER.World) {
   const root = new THREE.Group();
   scene.add(root);
   const pivot = new THREE.Group();
-  pivot.position.set(-6, 1.8, 2);
+  pivot.position.set(ARRAY_POSITION.x, 1.8, ARRAY_POSITION.z);
   root.add(pivot);
   const arrayMat = new THREE.MeshStandardMaterial({
     color: 0x273c59,
@@ -32,10 +36,14 @@ export function baseVisuals(scene: THREE.Scene, world: RAPIER.World) {
     new THREE.CylinderGeometry(0.14, 0.2, 1.8, 6),
     new THREE.MeshStandardMaterial({ color: 0xbbb5a3 }),
   );
-  mast.position.set(-6, 0.9, 2);
+  mast.position.set(ARRAY_POSITION.x, 0.9, ARRAY_POSITION.z);
   root.add(mast);
   const mastCollider = world.createCollider(
-    RAPIER.ColliderDesc.cylinder(0.9, 0.2).setTranslation(-6, 0.9, 2),
+    RAPIER.ColliderDesc.cylinder(0.9, 0.2).setTranslation(
+      ARRAY_POSITION.x,
+      0.9,
+      ARRAY_POSITION.z,
+    ),
   );
   let solarModel: Awaited<ReturnType<typeof loadSolarModel>> | undefined;
   let solarFailed = false;
@@ -131,7 +139,7 @@ export function baseVisuals(scene: THREE.Scene, world: RAPIER.World) {
     scene.add(sprite);
     return sprite;
   };
-  label("HOLD E / CLEAN ARRAY", -6, 3.6, 2);
+  label("HOLD E / CLEAN ARRAY", ARRAY_POSITION.x, 3.6, ARRAY_POSITION.z);
   const shelterLabel = label("STORM SHELTER · WALK IN", 6, 3.6, 5);
   for (const [asset, parent, hide] of [
     [assets.shelter, root, pieces],
