@@ -1,10 +1,7 @@
-import { beforeAll, describe, it, expect } from "vitest";
-import RAPIER from "@dimforge/rapier3d-compat";
+import { describe, it, expect } from "vitest";
+import RAPIER from "@dimforge/rapier3d";
 import { Character, DT } from "../src/physics";
 import { defaults, decode, encode, validate } from "../src/config";
-beforeAll(async () => {
-  await RAPIER.init();
-});
 function setup() {
   const w = new RAPIER.World({ x: 0, y: 0, z: 0 });
   w.createCollider(

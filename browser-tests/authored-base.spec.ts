@@ -47,13 +47,21 @@ test("walks the supplied base to oxygen and powered crop beds", async ({
   await move("z", -1);
   await move("x", -6);
   await page.keyboard.press("KeyE");
+  // The oxygen station opens the plant service view; its switch toggles the maker.
+  await expect(page.locator("#oxygen-game")).toBeVisible();
+  await page.locator("#o2-switch").click();
+  await expect(page.locator("#o2-switch")).toContainText("OFF");
   await expect(page.locator("#base-oxygen-text")).toContainText("OFF");
+  await page.locator("#oxygen-game .service-close").click();
+  await expect(page.locator("#oxygen-game")).toBeHidden();
   await move("x", 2);
   await move("z", -8.4);
   const before = await page.evaluate(
     () => (window as any).nebula.base.nourishment,
   );
   await page.keyboard.press("KeyE");
+  await expect(page.locator("#harvest-game")).toBeVisible();
+  await page.evaluate(() => (window as any).nebula.actions.autoHarvest());
   await expect
     .poll(() => page.evaluate(() => (window as any).nebula.base.nourishment))
     .toBeGreaterThan(before);

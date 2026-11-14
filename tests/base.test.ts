@@ -116,6 +116,7 @@ describe("seven-sol engineering model", () => {
     const s = make();
     for (let i = 0; i < 7 * 24 * 4 && s.state === "running"; i++) {
       if (s.nourishment < 65) s.harvest();
+      while (s.repair()); // the player seals oxygen plant punctures
       s.advance(SOL_SECONDS / 96, true);
       if (i % 96 === 0) s.clean(4, true);
     }
@@ -140,7 +141,7 @@ describe("seven-sol engineering model", () => {
   it("loses on oxygen depletion at the boundary", () => {
     const s = make({ initialOxygen: 0.001 });
     s.generator = false;
-    s.advance(10000);
+    s.advance(10000, true); // indoors: base consumption only
     expect(s.state).toBe("lost");
     expect(s.elapsed).toBeCloseTo((0.001 / defaults.oxygenConsumption) * 3600);
   });
@@ -184,4 +185,33 @@ it("clamps fictional stress and supports disabling and old base exports", () => 
     stressPerMGy: 15,
     stressRecoveryPerHour: 6,
   });
+});
+it("drains oxygen during EVA and only refills it indoors", () => {
+  const s = make({ eventDoseMGy: 0, leakEverySols: 30 });
+  s.generator = true;
+  const o0 = s.oxygen;
+  s.advance(3600, false);
+  expect(s.oxygen).toBeLessThan(o0);
+  const outside = s.oxygen;
+  s.advance(3600, true);
+  expect(s.oxygen).toBeGreaterThan(outside);
+});
+it("vents oxygen through punctures until they are sealed", () => {
+  const s = make({ eventDoseMGy: 0, leakEverySols: 30 });
+  s.punctures = 2;
+  const net = s.oxygenFlow(true, true).net;
+  expect(net).toBeLessThan(s.oxygenFlow(true, true).make);
+  expect(s.repair()).toBe(true);
+  expect(s.repair()).toBe(true);
+  expect(s.repair()).toBe(false);
+  expect(s.oxygenFlow(true, true).net).toBeGreaterThan(net);
+});
+it("schedules punctures independently of frame timing", () => {
+  const a = make({ eventDoseMGy: 0 }),
+    b = make({ eventDoseMGy: 0 });
+  const end = SOL_SECONDS * 2.2;
+  while (a.elapsed < end - 1e-6 && a.state === "running") a.advance(7, true);
+  while (b.elapsed < end - 1e-6 && b.state === "running") b.advance(301, true);
+  expect(a.punctures).toBe(b.punctures);
+  expect(a.punctures).toBeGreaterThan(0);
 });

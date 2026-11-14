@@ -1,9 +1,15 @@
 import * as THREE from "three";
-import RAPIER from "@dimforge/rapier3d-compat";
+import RAPIER from "@dimforge/rapier3d";
 import { createAuthoredStation } from "./authored-station";
 import { stationLayout } from "./layout";
 import { createStation } from "./station";
-export function createWorld(scene: THREE.Scene, world: RAPIER.World) {
+import { makeLabel } from "./label";
+import { createTerrain, type TerrainData } from "./terrain";
+export function createWorld(
+  scene: THREE.Scene,
+  world: RAPIER.World,
+  terrainData: TerrainData | null = null,
+) {
   function box(
     w: number,
     h: number,
@@ -25,34 +31,23 @@ export function createWorld(scene: THREE.Scene, world: RAPIER.World) {
     );
     return m;
   }
-  box(32, 1, 32, 0, -0.5, 0, 0xa95e43);
   const legacy = new URLSearchParams(location.search).has("lab");
+  // Main game: real Jezero terrain. Lab (or missing data): the original flat pad.
+  const terrain = !legacy && terrainData ? createTerrain(scene, world, terrainData) : null;
+  if (!terrain) box(32, 1, 32, 0, -0.5, 0, 0xa95e43);
   const station = legacy
     ? createStation(scene, world)
     : createAuthoredStation(scene, world);
   function label(text: string, x: number, y: number, z: number) {
-    const c = document.createElement("canvas");
-    c.width = 512;
-    c.height = 80;
-    const ctx = c.getContext("2d")!;
-    ctx.fillStyle = "#201a19";
-    ctx.fillRect(0, 0, 512, 80);
-    ctx.font = "bold 26px sans-serif";
-    ctx.fillStyle = "#f2d9b2";
-    ctx.textAlign = "center";
-    ctx.fillText(text, 256, 49);
-    const sprite = new THREE.Sprite(
-      new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c) }),
-    );
+    const sprite = makeLabel(text);
     sprite.position.set(x, y, z);
-    sprite.scale.set(2.8, 0.44, 1);
     scene.add(sprite);
     return sprite;
   }
-  if (legacy) label("HABITAT / OPEN ENTRANCE", 0, 3.65, -1);
-  if (legacy) label("BATTERY / CONTROL", -1.8, 2.1, -5.5);
+  if (legacy) label("HABITAT · OPEN ENTRANCE", 0, 3.65, -1);
+  if (legacy) label("BATTERY · CONTROL", -1.8, 2.1, -5.5);
   const beacon = box(0.4, 0.8, 0.4, 3, 0.4, 2, 0x436a69);
-  label("E / CONTROL PYLON", 3, 1.35, 2);
+  label(legacy ? "E / CONTROL PYLON" : "E / SEND REPORT", 3, 1.55, 2);
   const ring = new THREE.Mesh(
     new THREE.TorusGeometry(0.4, 0.025, 6, 24),
     new THREE.MeshBasicMaterial({ color: 0x93efca }),
@@ -62,7 +57,7 @@ export function createWorld(scene: THREE.Scene, world: RAPIER.World) {
   scene.add(ring);
   const op = stationLayout().oxygen;
   const oxygen = box(0.8, 1.2, 0.8, op.x, 0.6, op.z, 0x436a69);
-  label("E / O₂ PLANT", op.x, 1.9, op.z);
+  label("E / O₂ PLANT", op.x, 2.0, op.z);
   for (const x of legacy ? [-3, -3.6] : []) {
     const tank = new THREE.Mesh(
       new THREE.CylinderGeometry(0.22, 0.22, 1.2, 8),
@@ -84,7 +79,7 @@ export function createWorld(scene: THREE.Scene, world: RAPIER.World) {
     seed = (seed * 16807) % 2147483647;
     return seed / 2147483647;
   }
-  for (let i = 0; i < 60; i++) {
+  for (let i = 0; i < (terrain ? 0 : 60); i++) {
     const x = (rand() - 0.5) * 31,
       z = (rand() - 0.5) * 31;
     if (Math.abs(x) < 10 && Math.abs(z) < 10) continue;
@@ -96,7 +91,7 @@ export function createWorld(scene: THREE.Scene, world: RAPIER.World) {
     rock.scale.y = 0.6;
     scene.add(rock);
   }
-  for (let i = 0; i < 20; i++) {
+  for (let i = 0; i < (terrain ? 0 : 20); i++) {
     const a = (i / 20) * Math.PI * 2;
     const m = new THREE.Mesh(
       new THREE.ConeGeometry(5 + rand() * 5, 5 + rand() * 9, 5),
@@ -105,5 +100,5 @@ export function createWorld(scene: THREE.Scene, world: RAPIER.World) {
     m.position.set(Math.cos(a) * 44, 1, Math.sin(a) * 44);
     scene.add(m);
   }
-  return { beacon, ring, oxygen, station };
+  return { beacon, ring, oxygen, station, terrain };
 }

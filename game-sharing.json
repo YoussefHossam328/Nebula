@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 2,
+  "title": "Nebula",
+  "description": "Keep a small Mars base alive for seven sols: track the Sun, scrub dust off your solar array by hand, make oxygen, grow food and shelter from a solar particle event.",
+  "defaultCaptions": {
+    "x": "Nebula: keep a Mars base alive for seven sols. Scrub the dust off your solar panels by hand and get to shelter before the particle storm hits.",
+    "facebook": "Nebula is a small Mars survival field lab. Learn the base, then keep it running for seven sols: scrub solar panels, balance oxygen and power, and shelter from radiation.",
+    "reddit": "I've been polishing Nebula, a Three.js + Rapier Mars survival lab built on NASA-referenced data. You can now hand-scrub dusty solar panels.",
+    "discord": "Nebula: Mars base survival. Scrub panels, make oxygen, survive the particle event."
+  },
+  "assets": { "og": "assets/share/og.png", "favicon": "assets/share/favicon.png" }
+}

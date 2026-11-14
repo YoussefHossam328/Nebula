@@ -15,6 +15,7 @@ test("seven-sol schedule is survivable with harvesting, cleaning, and shielding"
   for (let i = 0; i < 7 * 96 && s.state === "running"; i++) {
     s.hazard = scheduledEvent(s.elapsed / SOL_SECONDS).active;
     if (s.nourishment < 65) s.harvest();
+    while (s.repair());
     s.clean(0, false);
     if (i % 96 === 0) s.clean(4, true);
     s.advance(SOL_SECONDS / 96, true);

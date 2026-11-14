@@ -3,9 +3,34 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Nebula · Mars field lab</title>
+    <title>Nebula · Mars survival field lab</title>
+    <meta
+      name="description"
+      content="Keep a small Mars base alive for seven sols: track the Sun, scrub dust off your solar array, make oxygen, grow food and shelter from radiation."
+    />
+    <meta name="theme-color" content="#1d1714" />
+    <link rel="icon" type="image/png" href="./icon-192.png" />
+    <style>
+      #boot{position:fixed;inset:0;z-index:100;display:grid;place-content:center;justify-items:center;gap:18px;background:#1d1714;color:#f4e3ca;font:500 14px/1.4 Inter,system-ui,sans-serif;transition:opacity .6s ease}
+      #boot.done{opacity:0;pointer-events:none}
+      #boot img{width:96px;height:96px;border-radius:22px;box-shadow:0 10px 40px #0008}
+      #boot h1{margin:0;font-size:28px;letter-spacing:.42em;padding-left:.42em;font-weight:700}
+      #boot .boot-bar{width:min(320px,70vw);height:6px;border-radius:3px;background:#3a2c25;overflow:hidden}
+      #boot #boot-fill{display:block;height:100%;width:0;background:linear-gradient(90deg,#e08a4c,#f2c48f);transition:width .25s ease}
+      #boot.failed #boot-fill{background:#c4553a}
+      #boot p{margin:0;color:#d8bfa4;font-size:12px;letter-spacing:.06em;min-height:1.4em}
+      #boot button{padding:9px 18px;border-radius:4px;border:1px solid #c9996a;background:#2a201b;color:#f4e3ca;font:600 13px system-ui;cursor:pointer}
+    </style>
   </head>
   <body>
+    <div id="boot" role="status" aria-live="polite">
+      <img src="./icon-192.png" alt="" width="96" height="96" />
+      <h1>NEBULA</h1>
+      <div class="boot-bar"><i id="boot-fill"></i></div>
+      <p id="boot-status">Loading game code · 0%</p>
+      <button id="boot-retry" type="button" hidden>Retry</button>
+    </div>
+    <div id="vfx-vignette" aria-hidden="true"></div>
     <main id="app">
       <canvas
         id="world"
@@ -15,7 +40,7 @@
       <header>
         <span class="eyebrow">NEBULA / FIELD LAB 01</span>
         <h1>A little closer<br />to Mars.</h1>
-        <p>Movement & camera sandbox · no mission yet</p>
+        <p>Legacy lab · movement, camera and engineering exercises</p>
       </header>
       <section class="readout">
         <span class="dot"></span>
@@ -33,9 +58,11 @@
           MARS GRAVITY<br /><strong id="gravity">3.71 m/s²</strong>
         </div>
       </footer>
-      <aside id="hint">Keyboard first. Touch controls will arrive later.</aside>
+      <aside id="hint">
+        Touch devices: an on-screen stick and buttons appear automatically.
+      </aside>
       <div id="notice" role="alert"></div>
     </main>
-    <script type="module" src="/src/main.ts"></script>
+    <script type="module" src="/src/boot.ts"></script>
   </body>
 </html>

@@ -1,0 +1,85 @@
+{
+  "note": "Real APOD entries baked from science.nasa.gov by scripts/bake-apod.py; used only when the live APOD API is unavailable or returns its placeholder.",
+  "entries": [
+    {
+      "date": "2026-06-27",
+      "title": "Mars Marathon by Perseverance",
+      "explanation": "In this recent HiRISE view from the Mars Reconnaissance Orbiter, the little green dot indicated on the surface of the big Red Planet is the Perseverance Mars rover. Recorded on June 13, the car-sized, six-wheeled robot was imaged a day before completing a Martian marathon, traveling a total distance of 26.218 miles (42.195 kilometers) since it began exploring the surface of Mars. That equivalent marathon distance was achieved by Perseverance on its mission sol (Martian day) 1,890, after about 5 Earth years and 4 Earth months of driving.",
+      "credit": "NASA, LPL (U. Arizona), MRO, HiRISE",
+      "copyright": false,
+      "media": "image",
+      "image": "2026-06-27.jpg",
+      "source": "https://science.nasa.gov/image-article/apod-2026-june-27-mars-marathon-by-perseverance/"
+    },
+    {
+      "date": "2023-11-07",
+      "title": "A Martian Dust Devil Spins By",
+      "explanation": "It moved across the surface of Mars -- what was it? A dust devil. Such spinning columns of rising air are heated by the warm surface and are also common in warm and dry areas on planet Earth.",
+      "credit": "NASA, JPL-Caltech, Perseverance Rover; AI processing: PipploIMP",
+      "copyright": false,
+      "media": "video",
+      "image": "2023-11-07.jpg",
+      "source": "https://science.nasa.gov/image-article/apod-2023-november-7-a-martian-dust-devil-spins-by/"
+    },
+    {
+      "date": "2025-07-06",
+      "title": "The Spiral North Pole of Mars",
+      "explanation": "Why is there a spiral around the North Pole of Mars? Each winter this pole develops a new outer layer about one meter thick composed of carbon dioxide frozen out of the thin Martian atmosphere. This fresh layer is deposited on a water-ice layer that exists year round.",
+      "credit": "ESA / DLR / FU Berlin; NASA MGS MOLA Science Team",
+      "copyright": false,
+      "media": "image",
+      "image": "2025-07-06.jpg",
+      "source": "https://science.nasa.gov/image-article/apod-2025-july-6-the-spiral-north-pole-of-mars/"
+    },
+    {
+      "date": "2024-03-22",
+      "title": "Phobos: Moon over Mars",
+      "explanation": "A tiny moon with a scary name, Phobos emerges from behind the Red Planet in this timelapse sequence from the Earth-orbiting Hubble Space Telescope. Over 22 minutes the 13 separate exposures were captured near the 2016 closest approach of Mars to planet Earth. Martians have to look to the west to watch Phobos rise, though.",
+      "credit": "NASA, ESA, Zolt Levay (STScI) - Acknowledgment: J.Bell (ASU) and M.Wolff (SSI)",
+      "copyright": false,
+      "media": "image",
+      "image": "2024-03-22.jpg",
+      "source": "https://science.nasa.gov/image-article/apod-2024-march-22-phobos-moon-over-mars/"
+    },
+    {
+      "date": "2025-06-29",
+      "title": "Dark Sand Cascades on Mars",
+      "explanation": "Are these trees growing on Mars? No. Groups of dark brown streaks have been photographed by the Mars Reconnaissance Orbiter on melting pinkish sand dunes covered with light frost.",
+      "credit": "NASA, HiRISE, MRO, LPL (U. Arizona),",
+      "copyright": false,
+      "media": "image",
+      "image": "2025-06-29.jpg",
+      "source": "https://science.nasa.gov/image-article/apod-2025-june-29-dark-sand-cascades-on-mars/"
+    },
+    {
+      "date": "2024-11-10",
+      "title": "Valles Marineris: The Grand Canyon of Mars",
+      "explanation": "The largest canyon in the Solar System cuts a wide swath across the face of Mars. Named Valles Marineris, the grand valley extends over 3,000 kilometers long, spans as much as 600 kilometers across, and delves as much as 8 kilometers deep. By comparison, the Earth's Grand Canyon in Arizona, USA is 800 kilometers long, 30 kilometers across, and 1.8 kilometers deep.",
+      "credit": "NASA, USGS, Viking Project",
+      "copyright": false,
+      "media": "image",
+      "image": "2024-11-10.jpg",
+      "source": "https://science.nasa.gov/image-article/apod-2024-november-10-valles-marineris-the-grand-canyon-of-mars/"
+    },
+    {
+      "date": "2025-04-13",
+      "title": "An Unusual Hole in Mars",
+      "explanation": "What created this unusual hole in Mars? Actually, there are numerous holes pictured in this Swiss cheese-like landscape, with all-but-one of them showing a dusty, dark, Martian terrain beneath evaporating, light, carbon dioxide ice. The most unusual hole is on the upper right, spans about 100 meters, and seems to punch through to a lower level.",
+      "credit": "NASA, MRO, HiRISE, JPL, U. Arizona",
+      "copyright": false,
+      "media": "image",
+      "image": "2025-04-13.jpg",
+      "source": "https://science.nasa.gov/image-article/apod-2025-april-13-an-unusual-hole-in-mars/"
+    },
+    {
+      "date": "2026-02-01",
+      "title": "Galle: Happy Face Crater on Mars",
+      "explanation": "Mars has put on a happy face. The Martian crater Galle is famous because it has internal markings that make it look like a face that is both smiling and winking. These markings were originally discovered in the 1970s in pictures taken by the Viking Orbiter.",
+      "credit": "NASA, MGS, MSSS",
+      "copyright": false,
+      "media": "image",
+      "image": "2026-02-01.jpg",
+      "source": "https://science.nasa.gov/image-article/apod-2026-february-1-galle-happy-face-crater-on-mars/"
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-import RAPIER from "@dimforge/rapier3d-compat";
+import RAPIER from "@dimforge/rapier3d";
 import { approach, jumpSpeed, type Settings } from "./config";
 export const DT = 1 / 60;
 export class Character {

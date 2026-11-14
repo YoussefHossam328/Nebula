@@ -7,8 +7,9 @@ test("menu, training dialogue, fresh challenge, pause and restart routes", async
   await page.goto("./");
   await page.waitForFunction(() => (window as any).nebula?.ready);
   await expect(
-    page.getByRole("heading", { name: "NEBULA", exact: true }),
+    page.locator("#game-overlay").getByRole("heading", { name: "NEBULA", exact: true }),
   ).toBeVisible();
+  await expect(page.getByRole("heading", { name: "NEBULA", exact: true })).toHaveCount(1);
   await page.getByRole("button", { name: "Play", exact: true }).click();
   await expect(
     page.getByRole("heading", { name: "Welcome to Mars" }),
@@ -61,7 +62,7 @@ test("debug window can activate a visual disaster and restart training", async (
   await page
     .getByRole("button", { name: "Debug / settings", exact: true })
     .click();
-  await page.getByRole("button", { name: "Resume", exact: true }).click();
+  // Closing debug that was opened from play resumes play directly.
   await expect
     .poll(() => page.evaluate(() => (window as any).nebula.base.hazard))
     .toBe("dust");
@@ -97,7 +98,7 @@ test("loss offers a fresh challenge or tutorials", async ({ page }) => {
   await page
     .getByRole("button", { name: "Debug / settings", exact: true })
     .click();
-  await page.getByRole("button", { name: "Resume", exact: true }).click();
+  // Closing debug that was opened from play resumes play directly.
   await expect(page.getByRole("heading", { name: "Run ended" })).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Restart challenge", exact: true }),

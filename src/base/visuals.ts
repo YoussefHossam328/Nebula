@@ -1,10 +1,11 @@
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { assets } from "../assets";
-import RAPIER from "@dimforge/rapier3d-compat";
+import RAPIER from "@dimforge/rapier3d";
 import type { BaseConfig } from "./config";
 import { loadSolarModel } from "./solar-model";
 import { sunlight } from "./model";
+import { makeLabel } from "../label";
 export const ARRAY_POSITION =
   typeof location !== "undefined" &&
   new URLSearchParams(location.search).has("lab")
@@ -77,7 +78,13 @@ export function baseVisuals(scene: THREE.Scene, world: RAPIER.World) {
   let colliders: RAPIER.Collider[] = [];
   let signature = "";
   let customShelter: THREE.Object3D | undefined;
+  const legacyShelter =
+    typeof location !== "undefined" &&
+    new URLSearchParams(location.search).has("lab");
+  // Outside the legacy lab the habitat itself is the radiation shelter.
+  shelter.visible = legacyShelter;
   function configure(c: BaseConfig) {
+    if (!legacyShelter) return;
     const sig = [
       c.shelterX,
       c.shelterZ,
@@ -121,26 +128,24 @@ export function baseVisuals(scene: THREE.Scene, world: RAPIER.World) {
     });
   }
   const label = (text: string, x: number, y: number, z: number) => {
-    const canvas = document.createElement("canvas");
-    canvas.width = 512;
-    canvas.height = 80;
-    const ctx = canvas.getContext("2d")!;
-    ctx.fillStyle = "#201b18";
-    ctx.fillRect(0, 0, 512, 80);
-    ctx.fillStyle = "#edd1a4";
-    ctx.textAlign = "center";
-    ctx.font = "bold 27px sans-serif";
-    ctx.fillText(text, 256, 48);
-    const sprite = new THREE.Sprite(
-      new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(canvas) }),
-    );
-    sprite.scale.set(3.8, 0.6, 1);
+    const sprite = makeLabel(text, 3);
     sprite.position.set(x, y, z);
     scene.add(sprite);
     return sprite;
   };
-  label("HOLD E / CLEAN ARRAY", ARRAY_POSITION.x, 3.6, ARRAY_POSITION.z);
+  const legacyLab =
+    typeof location !== "undefined" &&
+    new URLSearchParams(location.search).has("lab");
+  label(
+    legacyLab ? "HOLD E / CLEAN ARRAY" : "E / SERVICE ARRAY",
+    ARRAY_POSITION.x,
+    3.6,
+    ARRAY_POSITION.z,
+  );
   const shelterLabel = label("STORM SHELTER · WALK IN", 6, 3.6, 5);
+  shelterLabel.scale.multiplyScalar(1.1);
+  shelterLabel.visible = legacyLab;
+  if (!legacyLab) shelterLabel.removeFromParent();
   for (const [asset, parent, hide] of [
     [assets.shelter, root, pieces],
   ] as const) {

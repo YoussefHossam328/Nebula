@@ -5,13 +5,18 @@ import { eventDefaults, scheduledEvent } from "./events";
 import type GUI from "lil-gui";
 import type { baseUI } from "./base/ui";
 import { SOL_SECONDS } from "./base/config";
+import { createApodWidget } from "./apod";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
-import RAPIER from "@dimforge/rapier3d-compat";
+import RAPIER from "@dimforge/rapier3d";
+import { cleaningGame } from "./cleaning";
+import { harvestGame, type HarvestResult } from "./harvest";
+import { oxygenPlantGame } from "./o2plant";
+import { captureSave, clearSave, readSave, writeSave, type MissionSave } from "./save";
 type Base = ReturnType<typeof baseUI>;
 const lessons = [
   [
     "Welcome to Mars",
-    "Walk with WASD. Hold Shift to run, Space to jump, and C to crouch. Try each before continuing.",
+    "Walk with WASD (or the on-screen stick). Hold Shift to run, Space to jump, and C to crouch. Try each before continuing.",
     "Move, run, jump and crouch.",
   ],
   [
@@ -21,23 +26,23 @@ const lessons = [
   ],
   [
     "Keep panels clean",
-    "Dust blocks sunlight. Stand by the service ring and hold E until cleaning finishes. Clean panels make more power.",
-    "Hold E beside the solar service ring.",
+    "Dust blocks sunlight. Stand on the service ring and press E to open the service hatch, then scrub the panel by dragging across it. Caked spots need a few passes. Clean panels make more power.",
+    "Press E at the solar service ring and scrub the panel clean.",
   ],
   [
     "Make oxygen",
-    "Our oxygen maker needs electricity. Press E at the oxygen station to turn it off, then on. Watch the reserve and power load.",
-    "Toggle the oxygen maker twice.",
+    "The oxygen maker needs electricity, and its output only reaches you indoors: outside, your suit drains the reserve. Press E at the oxygen station to open the plant. Flip the maker off and on. A line is punctured: listen for the hiss, hold to spray detector until it foams, then circle the foam to wind tape.",
+    "Open the oxygen plant, toggle the maker twice and seal the leak.",
   ],
   [
     "Grow your next meal",
-    "Press E at the green crop beds to eat. Each harvest replants itself. Growing needs power, so keep the battery charged.",
-    "Eat one ready crop beside the green beds.",
+    "Press E at the crop beds to harvest. Swipe across a red truss stalk just above its knuckle for a clean cut. Leave green trusses and the main stem alone; trim yellow leaves for a faster regrow. Growing needs power.",
+    "Harvest a ripe bed at the crop beds.",
   ],
   [
     "Find protection",
-    "Particle events raise radiation. Walk into the storm shelter. Game stress falls there. Recorded dose stays: shelter reduces new exposure.",
-    "Enter the shelter on the right and watch stress fall.",
+    "Particle events raise radiation, and time outside builds stress. The habitat walls are your shelter: inside, incoming dose drops and stress recovers. Recorded dose stays. Listen to the counter clicks.",
+    "Go inside the habitat and watch stress fall.",
   ],
   [
     "Messages take time",
@@ -46,7 +51,7 @@ const lessons = [
   ],
   [
     "Your seven-sol mission",
-    "Keep oxygen, food and power available for seven Mars days. Watch warnings, clean panels, grow food and shelter during particle events.",
+    "Keep oxygen, food and power available for seven Mars days. Watch warnings, clean panels, harvest food, seal oxygen leaks and stay indoors during particle events.",
     "Training complete. Begin with fresh supplies.",
   ],
 ];
@@ -56,11 +61,22 @@ export function mission(
   scene: THREE.Scene,
   world: RAPIER.World,
   clear: () => void,
-  reset: () => void,
+  reset: (at?: { x: number; y: number; z: number }) => void,
+  hooks: {
+    player: () => { x: number; y: number; z: number };
+    scrub: (intensity: number) => void;
+    cleaned: () => void;
+    snip?: (kind: "clean" | "bruised" | "wasted" | "leaf" | "nick") => void;
+    hiss?: (intensity: number, pan: number) => void;
+    sealed?: () => void;
+    harvested?: (at: { x: number; z: number }) => void;
+  } = { player: () => ({ x: 0, y: 0, z: 0 }), scrub: () => {}, cleaned: () => {} },
 ) {
   if (new URLSearchParams(location.search).has("lab"))
     return {
       blocked: false,
+      muted: false,
+      prompt: "",
       state: "lab",
       interact: (_p: { x: number; y: number; z: number }) => false,
       update: (
@@ -79,8 +95,28 @@ export function mission(
     coldWatts: 300,
   };
   let mode:
-    "menu" | "dialogue" | "practice" | "mission" | "paused" | "results" =
-    "menu";
+    | "menu"
+    | "dialogue"
+    | "practice"
+    | "mission"
+    | "cleaning"
+    | "harvest"
+    | "oxygen"
+    | "paused"
+    | "results" = "menu";
+  let cleanReturn: "practice" | "mission" = "mission",
+    debugPaused = false,
+    saveTimer = 0,
+    promptText = "";
+  const inService = () =>
+    mode === "cleaning" || mode === "harvest" || mode === "oxygen";
+  const playing = () => mode === "practice" || mode === "mission" || inService();
+  const kind = () => (inService() ? cleanReturn : mode);
+  function closeService() {
+    if (mode === "cleaning") cleaning.close();
+    else if (mode === "harvest") harvest.close();
+    else if (mode === "oxygen") oxygenPlant.close();
+  }
   let returnMode: "practice" | "mission" = "mission",
     lesson = 0,
     moved = 0,
@@ -101,7 +137,9 @@ export function mission(
   overlay.id = "game-overlay";
   const hud = document.createElement("section");
   hud.id = "mission-hud";
-  hud.innerHTML = `<div class="mission-top"><b>NEBULA</b><span id="mission-clock"></span><button id="game-pause">Pause</button><button id="game-debug">Debug / settings</button></div><div id="mission-event" role="status"></div><div class="mission-dock">${["Battery", "Oxygen", "Nourishment", "Stress"].map((v, i) => `<label><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${["M4 6h15v14H4z M9 3h5", "M12 3C8 10 4 12 5 16a7 7 0 0014 0C20 12 16 10 12 3Z", "M5 20V9h14v11z M12 9V3 M12 6L7 3 M12 7l5-4", "M12 3l9 17H3z M12 9v5 M12 17v1"][i]}"/></svg>${v}<meter id="mission-${v}" min="0" max="100"></meter><span id="value-${v}"></span></label>`).join("")}</div><p id="mission-prompt"></p><small id="mission-dose"></small>`;
+  hud.innerHTML = `<div class="mission-top"><b>NEBULA</b><span id="mission-clock"></span><span id="mission-leak" role="status"></span><button id="game-pause">Pause</button><button id="game-debug">Debug / settings</button></div><div id="mission-event" role="status"></div><div class="mission-dock">${["Battery", "Oxygen", "Nourishment", "Stress"].map((v, i) => `<label><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${["M4 6h15v14H4z M9 3h5", "M12 3C8 10 4 12 5 16a7 7 0 0014 0C20 12 16 10 12 3Z", "M5 20V9h14v11z M12 9V3 M12 6L7 3 M12 7l5-4", "M12 3l9 17H3z M12 9v5 M12 17v1"][i]}"/></svg>${v}<meter id="mission-${v}" min="0" max="100"></meter><span id="value-${v}"></span></label>`).join("")}</div><p id="mission-prompt"></p><small id="mission-dose"></small><span id="mission-saved" aria-live="polite"></span>`;
+  const apod = createApodWidget(document.body);
+  let solsDone = 0;
   document.body.append(hud, overlay);
   document.body.classList.add("game-shell");
   gui.domElement.style.display = "none";
@@ -113,6 +151,9 @@ export function mission(
   };
   function screen(title: string, text: string) {
     overlay.hidden = false;
+    overlay.classList.remove("enter");
+    void overlay.offsetWidth;
+    overlay.classList.add("enter");
     overlay.replaceChildren();
     const h = document.createElement("h1");
     h.textContent = title;
@@ -124,10 +165,19 @@ export function mission(
   function menu() {
     base.stop();
     mode = "menu";
+    apod.reset();
     screen(
       "NEBULA",
       "A Mars survival field lab · Learn. Prepare. Stay curious.",
     );
+    const saved = readSave();
+    if (saved) {
+      const sol = Math.floor((saved.sim.elapsed as number) / SOL_SECONDS) + 1;
+      button(
+        `Continue mission · Sol ${sol} / ${saved.config.sols}`,
+        () => continueMission(saved),
+      );
+    }
     button("Play", () => training());
     button("Start challenge", () => challenge());
   }
@@ -146,6 +196,9 @@ export function mission(
     base.sim.nourishment = 65;
     base.sim.stress = 30;
     base.sim.dust = 0.6;
+    base.sim.punctures = lesson === 3 ? 1 : 0;
+    base.sim.nextLeakAt = Number.POSITIVE_INFINITY;
+    base.sim.crops = [1, 1];
     cleanStart = base.sim.cleanCount;
     stressStart = base.sim.stress;
     moved = 0;
@@ -167,13 +220,62 @@ export function mission(
       }
     });
   }
+  function continueMission(save: MissionSave) {
+    reset(save.player);
+    base.restore(save);
+    Object.assign(balance, save.balance);
+    Object.assign(calendar, save.calendar);
+    forced = save.forced;
+    forceEnd = save.forceEnd;
+    modified = save.modified;
+    reportAt = save.reportAt;
+    replied = save.replied;
+    solsDone = Math.floor(base.sim.elapsed / SOL_SECONDS);
+    apod.reset(solsDone);
+    mode = "mission";
+    lastEvent = "";
+    eventText = "";
+    overlay.hidden = true;
+    clear();
+    document.querySelector<HTMLCanvasElement>("#world")?.focus();
+    flash("Mission resumed from local save");
+  }
+  function snapshot() {
+    if (kind() !== "mission" && !(mode === "paused" && returnMode === "mission"))
+      return;
+    if (base.sim.state !== "running" && base.sim.state !== "paused") return;
+    const ok = writeSave(
+      captureSave(base.sim, {
+        balance: { ...balance },
+        calendar: { ...calendar },
+        forced,
+        forceEnd,
+        modified,
+        reportAt,
+        replied,
+        player: hooks.player(),
+      }),
+    );
+    if (ok) flash("Saved");
+  }
+  let flashTimer = 0;
+  function flash(text: string) {
+    const el = hud.querySelector<HTMLElement>("#mission-saved")!;
+    el.textContent = text;
+    el.classList.add("show");
+    clearTimeout(flashTimer);
+    flashTimer = window.setTimeout(() => el.classList.remove("show"), 1600);
+  }
   function challenge() {
+    clearSave();
     base.start();
     reset();
     mode = "mission";
     forced = "none";
     reportAt = -1;
     modified = false;
+    solsDone = 0;
+    apod.reset();
     lastEvent = "";
     eventText = "";
     replied = false;
@@ -181,36 +283,63 @@ export function mission(
     clear();
     document.querySelector<HTMLCanvasElement>("#world")?.focus();
   }
+  function resumePlay() {
+    if (mode !== "paused") return;
+    mode = returnMode;
+    overlay.hidden = true;
+    base.resume();
+    clear();
+    document.querySelector<HTMLCanvasElement>("#world")?.focus();
+  }
   function pause() {
+    closeService();
     if (mode !== "mission" && mode !== "practice") return;
     returnMode = mode;
     mode = "paused";
     base.pause();
+    snapshot();
     screen("Paused", "Your supplies and events are paused.");
     button("Resume", () => {
-      mode = returnMode;
-      overlay.hidden = true;
-      base.resume();
-      clear();
-      document.querySelector<HTMLCanvasElement>("#world")?.focus();
+      debugPaused = false;
+      resumePlay();
     });
     button("Restart tutorials", training);
     button("Restart challenge", challenge);
-    button("Main menu", menu);
+    button("Main menu", () => {
+      snapshot();
+      menu();
+    });
   }
   hud.querySelector<HTMLButtonElement>("#game-pause")!.onclick = pause;
-  hud.querySelector<HTMLButtonElement>("#game-debug")!.onclick = () => {
-    const visible = gui.domElement.style.display !== "none";
-    gui.domElement.style.display = visible ? "none" : "block";
-    if (!visible) {
-      pause();
+  const debugButton = hud.querySelector<HTMLButtonElement>("#game-debug")!;
+  function setDebug(open: boolean) {
+    gui.domElement.style.display = open ? "block" : "none";
+    debugButton.classList.toggle("on", open);
+    if (open) {
       gui.open();
+      if (playing()) {
+        pause();
+        debugPaused = true;
+      }
+    } else {
+      // Return to play if the debug window was what paused the game.
+      if (debugPaused && mode === "paused") resumePlay();
+      debugPaused = false;
     }
-  };
+  }
+  debugButton.onclick = () =>
+    setDebug(gui.domElement.style.display === "none");
   window.addEventListener("keydown", (e) => {
-    if (e.code === "Escape") pause();
+    if (e.code === "Escape") {
+      if (inService()) closeService();
+      else if (gui.domElement.style.display !== "none" && debugPaused)
+        setDebug(false);
+      else pause();
+    }
     if (mode === "practice") tried.add(e.code);
   });
+  window.addEventListener("pagehide", snapshot);
+  window.addEventListener("beforeunload", snapshot);
   window.addEventListener("blur", pause);
   document.addEventListener("visibilitychange", () => {
     if (document.hidden) pause();
@@ -221,6 +350,10 @@ export function mission(
     duration: 0.25,
     dust: () => force("dust"),
     cold: () => force("cold"),
+    puncture: () => {
+      base.sim.punctures = Math.min(base.sim.config.maxPunctures || 3, base.sim.punctures + 1);
+      modified = true;
+    },
     particles: () => {
       base.sim.config.eventSol = base.sim.elapsed / SOL_SECONDS;
       base.sim.config.eventDoseMGy = 8.1;
@@ -249,6 +382,7 @@ export function mission(
   for (const k of [
     "dust",
     "cold",
+    "puncture",
     "particles",
     "clear",
     "mature",
@@ -259,6 +393,7 @@ export function mission(
     f.add(debug, k).$name.title = {
       dust: "Queue a dust storm; reduces sunlight after resuming.",
       cold: "Queue a cold snap; adds heater demand after resuming.",
+      puncture: "Puncture an oxygen plant line now (vents reserve until sealed).",
       particles:
         "Start the RAD-reference particle curve at the current simulation time. Resume to advance it.",
       clear:
@@ -349,35 +484,122 @@ export function mission(
   );
   pad.position.set(10, 0.04, -8);
   scene.add(pad);
-  const dustGeometry = new THREE.BufferGeometry();
-  const dustPositions = new Float32Array(96 * 3);
-  for (let i = 0; i < 96; i++) {
-    dustPositions[i * 3] = ((i * 7.13) % 30) - 15;
-    dustPositions[i * 3 + 1] = 0.4 + ((i * 1.37) % 5);
-    dustPositions[i * 3 + 2] = ((i * 3.79) % 30) - 15;
-  }
-  dustGeometry.setAttribute(
-    "position",
-    new THREE.BufferAttribute(dustPositions, 3),
-  );
-  const dustParticles = new THREE.Points(
-    dustGeometry,
-    new THREE.PointsMaterial({
-      color: 0xe4b98a,
-      size: 0.07,
-      transparent: true,
-      opacity: 0.45,
-      depthWrite: false,
-    }),
-  );
-  scene.add(dustParticles);
   const ring = new THREE.Mesh(
     new THREE.RingGeometry(0.45, 0.6, 24),
-    new THREE.MeshBasicMaterial({ color: 0xaee7dd, side: THREE.DoubleSide }),
+    new THREE.MeshBasicMaterial({
+      color: 0xaee7dd,
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0.85,
+      depthWrite: false,
+    }),
   );
   ring.rotation.x = -Math.PI / 2;
   ring.position.set(ARRAY_POSITION.x, 0.035, ARRAY_POSITION.z - 2);
   scene.add(ring);
+  const cleaning = cleaningGame({
+    progress: (f) => base.sim.scrub(f),
+    complete: () => {
+      base.sim.finishService(true);
+      hooks.cleaned();
+      eventText = "Array cleaned · full sunlight reaching the cells.";
+    },
+    close: () => {
+      base.sim.finishService(false);
+      if (mode === "cleaning") mode = cleanReturn;
+      hooks.scrub(0);
+      clear();
+      document.querySelector<HTMLCanvasElement>("#world")?.focus();
+    },
+    scrub: (i) => hooks.scrub(i),
+  });
+  let bed = 0,
+    harvestApplied = false;
+  function applyHarvest(r: HarvestResult) {
+    if (harvestApplied || r.ripeCut <= 0) return;
+    harvestApplied = true;
+    const amount = r.ripeTotal ? r.yield * (r.ripeCut / r.ripeTotal) : 0;
+    const before = base.sim.nourishment;
+    if (base.sim.harvestBed(bed, r.ripeCut >= r.ripeTotal ? r.yield : amount, r.headStart)) {
+      if (lesson === 4 && mode !== "mission" && cleanReturn === "practice") complete = true;
+      eventText = `Harvest in · +${Math.round(base.sim.nourishment - before)} nourishment · bed replanted${r.headStart > 0.01 ? ` (+${Math.round(r.headStart * 100)}% head start)` : ""}.`;
+      hooks.harvested?.({ x: layout.farm.x + bed * 1.6, z: layout.farm.z });
+    }
+  }
+  const harvest = harvestGame({
+    complete: (r) => applyHarvest(r),
+    close: (r) => {
+      applyHarvest(r);
+      if (mode === "harvest") mode = cleanReturn;
+      clear();
+      document.querySelector<HTMLCanvasElement>("#world")?.focus();
+    },
+    snip: (k) => hooks.snip?.(k),
+  });
+  const oxygenPlant = oxygenPlantGame({
+    state: () => {
+      const f = base.sim.flows();
+      return {
+        fraction: base.sim.oxygen / base.sim.config.oxygenCapacity,
+        on: base.sim.generator,
+        powered: f.powered,
+        netKgH: base.sim.oxygenFlow(f.powered, true).net,
+      };
+    },
+    toggle: () => {
+      const before = base.sim.generator;
+      base.sim.toggle();
+      if (before !== base.sim.generator) toggles++;
+      return base.sim.generator;
+    },
+    sealed: () => {
+      base.sim.repair();
+      hooks.sealed?.();
+      eventText = base.sim.punctures
+        ? `Leak sealed · ${base.sim.punctures} still venting.`
+        : "All oxygen lines sealed · pressure holding.";
+    },
+    close: () => {
+      if (mode === "oxygen") mode = cleanReturn;
+      hooks.scrub(0);
+      clear();
+      document.querySelector<HTMLCanvasElement>("#world")?.focus();
+    },
+    work: (i) => hooks.scrub(i * 0.55),
+    hiss: (i, pan) => hooks.hiss?.(i, pan),
+  });
+  function openHarvest() {
+    if (mode !== "practice" && mode !== "mission") return false;
+    const i = base.sim.crops.findIndex((v) => v >= 1);
+    if (i < 0) return false;
+    bed = i;
+    harvestApplied = false;
+    cleanReturn = mode;
+    mode = "harvest";
+    clear();
+    harvest.show();
+    return true;
+  }
+  function openOxygen() {
+    if (mode !== "practice" && mode !== "mission") return false;
+    cleanReturn = mode;
+    mode = "oxygen";
+    clear();
+    oxygenPlant.show(base.sim.punctures);
+    return true;
+  }
+  function openCleaning() {
+    if (mode !== "practice" && mode !== "mission") return;
+    cleanReturn = mode;
+    mode = "cleaning";
+    clear();
+    base.sim.beginService();
+    cleaning.show(
+      base.sim.dirtiness(),
+      base.sim.dust,
+      base.sim.config.cleanRestore,
+    );
+  }
   // Ground the world-space GLB bounds; proxy collision intentionally remains simple.
   new GLTFLoader().load(
     import.meta.env.BASE_URL + "models/Lander.glb",
@@ -403,11 +625,8 @@ export function mission(
     if (
       Math.hypot(p.x - layout.farmTarget.x, p.z - layout.farmTarget.z) < 2.5
     ) {
-      const eaten = base.sim.harvest();
-      if (eaten && lesson === 4) complete = true;
-      eventText = eaten
-        ? "Meal eaten. Crops replanted."
-        : "Crops growing, or nourishment already full.";
+      if (!openHarvest())
+        eventText = `Crops still growing · beds ${base.sim.crops.map((v) => Math.round(v * 100) + "%").join(" / ")}${base.sim.flows().cropsPowered ? "" : " · grow lights need power"}`;
       return true;
     }
     if (Math.hypot(p.x - 3, p.z - 2) < 2.5) {
@@ -417,12 +636,11 @@ export function mission(
       }
       return true;
     }
-    if (base.target(p) === "oxygen") {
-      const before = base.sim.generator;
-      base.interact(p);
-      if (before !== base.sim.generator) toggles++;
+    if (base.target(p) === "array") {
+      openCleaning();
       return true;
     }
+    if (base.target(p) === "oxygen" && openOxygen()) return true;
     return false;
   }
   f
@@ -441,8 +659,27 @@ export function mission(
     get blocked() {
       return mode !== "mission" && mode !== "practice";
     },
+    /** World audio is muted only outside play (cleaning keeps ambience). */
+    get muted() {
+      return !playing();
+    },
+    get prompt() {
+      return promptText;
+    },
+    get cleaning() {
+      return cleaning;
+    },
+    get harvest() {
+      return harvest;
+    },
+    get oxygenPlant() {
+      return oxygenPlant;
+    },
     get event() {
       return lastEvent;
+    },
+    get apod() {
+      return apod.state;
     },
     get state() {
       return mode;
@@ -450,14 +687,6 @@ export function mission(
     interact,
     update(dt: number, p: { x: number; y: number; z: number }, speed: number) {
       Object.assign(base.sim, balance);
-      dustParticles.visible = mode === "mission" && base.sim.hazard === "dust";
-      if (dustParticles.visible) {
-        for (let i = 0; i < 96; i++) {
-          dustPositions[i * 3] += dt * 4;
-          if (dustPositions[i * 3] > 15) dustPositions[i * 3] = -15;
-        }
-        dustGeometry.attributes.position.needsUpdate = true;
-      }
       if (mode === "menu") {
         document.body.classList.remove("dust-event", "radiation-event");
       }
@@ -478,7 +707,7 @@ export function mission(
               : lesson === 2
                 ? base.sim.cleanCount > cleanStart
                 : lesson === 3
-                  ? toggles >= 2
+                  ? toggles >= 2 && base.sim.punctures === 0 && mode === "practice"
                   : lesson === 5
                     ? base.sim.inShelter && base.sim.stress < stressStart - 2
                     : lesson === 6
@@ -505,28 +734,43 @@ export function mission(
         eventText =
           "Earth reply received: report confirmed. Keep maintaining the base.";
       }
-      if (mode === "mission" || mode === "practice") {
+      if (kind() === "mission") {
+        // Each completed sol, Earth beams up a NASA Astronomy Picture of the Day.
+        const done = Math.min(base.sim.config.sols, Math.floor(sol));
+        if (done > solsDone) {
+          solsDone = done;
+          void apod.deliver(done, base.sim.config.sols);
+        }
+        saveTimer += dt;
+        if (saveTimer > 5) {
+          saveTimer = 0;
+          snapshot();
+        }
+      }
+      if (kind() === "mission" || kind() === "practice") {
         if (forced !== "none" && base.sim.elapsed >= forceEnd) forced = "none";
         const scheduled = scheduledEvent(sol, calendar);
         base.sim.hazard =
           forced !== "none"
             ? forced
-            : mode === "mission"
+            : kind() === "mission"
               ? scheduled.active
               : "none";
         const ev =
-          mode === "mission" &&
+          kind() === "mission" &&
           scheduled.warning !== "none" &&
           forced === "none"
             ? `WEATHER WARNING · ${scheduled.warning} approaching. Check power and crops.`
+            : base.sim.punctures > 0 && kind() === "mission"
+              ? "O₂ PLANT PUNCTURE · reserve venting. Seal it at the oxygen station."
             : base.sim.hazard === "dust"
               ? "DUST STORM · sunlight reduced. Clean panels after the storm."
               : base.sim.hazard === "cold"
                 ? "COLD SNAP · heaters draw an extra 300 W."
                 : base.sim.eventState() === "PARTICLE EVENT"
-                  ? "PARTICLE EVENT · seek shelter"
+                  ? "PARTICLE EVENT · get inside the habitat"
                   : base.sim.eventState().startsWith("Warning")
-                    ? "PARTICLE WARNING · prepare shelter"
+                    ? "PARTICLE WARNING · head indoors soon"
                     : sol < 1
                       ? "First sol · store energy for sunset"
                       : sol >= 6
@@ -538,6 +782,14 @@ export function mission(
           eventTimer = 0;
         }
         eventTimer += dt;
+        const leakBadge = hud.querySelector<HTMLElement>("#mission-leak")!;
+        const leakText = base.sim.punctures
+          ? `O₂ LEAK ×${base.sim.punctures}`
+          : "";
+        if (leakBadge.textContent !== leakText) {
+          leakBadge.textContent = leakText;
+          leakBadge.classList.toggle("show", Boolean(leakText));
+        }
         document.body.classList.toggle(
           "dust-event",
           base.sim.hazard === "dust",
@@ -547,6 +799,9 @@ export function mission(
           base.sim.eventState() === "PARTICLE EVENT",
         );
         if (base.sim.state === "lost" || base.sim.state === "completed") {
+          const wasMission = kind() === "mission";
+          closeService();
+          if (wasMission) clearSave();
           mode = "results";
           screen(
             base.sim.state === "completed"
@@ -568,6 +823,13 @@ export function mission(
       ["Battery", "Oxygen", "Nourishment", "Stress"].forEach((v, i) => {
         (hud.querySelector("#mission-" + v) as HTMLMeterElement).value =
           values[i];
+        hud
+          .querySelector("#mission-" + v)!
+          .closest("label")!
+          .classList.toggle(
+            "low",
+            mode !== "menu" && (i < 3 ? values[i] < 20 : values[i] > 80),
+          );
         hud.querySelector("#value-" + v)!.textContent =
           values[i].toFixed(0) + "%";
       });
@@ -576,20 +838,30 @@ export function mission(
       hud.querySelector("#mission-event")!.textContent = eventText;
       hud.querySelector("#mission-dose")!.textContent =
         `Recorded dose ${base.sim.dose.toFixed(3)} / ${base.sim.config.doseLimitMGy} mGy · ${base.sim.inShelter ? "Sheltered · stress recovering" : "Outside"} · NASA RAD reference, modeled scenario`;
-      hud.querySelector("#mission-prompt")!.textContent =
-        mode === "practice"
+      const nearArray =
+        Math.hypot(p.x - ARRAY_POSITION.x, p.z - (ARRAY_POSITION.z - 2)) < 3;
+      ring.scale.setScalar(nearArray ? 1 + 0.08 * Math.sin(performance.now() / 180) : 1);
+      (ring.material as THREE.MeshBasicMaterial).opacity = nearArray ? 1 : 0.55;
+      promptText =
+        mode === "cleaning"
+          ? ""
+          : mode === "practice"
           ? lessons[lesson][2]
           : Math.hypot(p.x - layout.farmTarget.x, p.z - layout.farmTarget.z) <
               2.5
-            ? `E · Eat crop / auto replant · beds ${base.sim.crops.map((v) => Math.round(v * 100) + "%").join(" / ")} · ${base.sim.flows().cropsPowered ? "growing" : "ready or power unavailable"}`
+            ? `E · Harvest crops · beds ${base.sim.crops.map((v) => Math.round(v * 100) + "%").join(" / ")} · ${base.sim.flows().cropsPowered ? "growing" : "ready or power unavailable"}`
             : Math.hypot(p.x - ARRAY_POSITION.x, p.z - (ARRAY_POSITION.z - 2)) <
                 3
-              ? `Hold E · Clean array ${Math.round((base.sim.cleanProgress / base.sim.config.cleanSeconds) * 100)}%`
+              ? `E · Open panel service · sunlight reaching cells ${Math.round(base.sim.dust * 100)}%`
               : Math.hypot(p.x - layout.oxygen.x, p.z - layout.oxygen.z) < 2.5
                 ? "E · Toggle oxygen maker"
                 : Math.hypot(p.x - 3, p.z - 2) < 2.5
                   ? "E · Send station report"
-                  : "WASD move · Shift run · Space jump · C crouch";
+                  : document.body.classList.contains("touch")
+                    ? "Stick move · RUN · JUMP · CROUCH · USE"
+                    : "WASD move · Shift run · Space jump · C crouch";
+      hud.querySelector("#mission-prompt")!.textContent = promptText;
+      hud.classList.toggle("is-cleaning", mode === "cleaning");
       leaves.forEach((m, i) =>
         m.scale.setScalar(0.2 + 0.8 * base.sim.crops[i]),
       );

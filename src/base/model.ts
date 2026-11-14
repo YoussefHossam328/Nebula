@@ -80,6 +80,15 @@ export class BaseSimulation {
     this.nourishment = Math.min(100, this.nourishment + this.mealSize);
     return true;
   }
+  /** Hands-on harvest of one ripe bed: `amount` of a meal, replant with a head start. */
+  harvestBed(i: number, amount: number, headStart = 0) {
+    if (this.state !== "running" && this.state !== "paused") return false;
+    if (!(this.crops[i] >= 1) || !Number.isFinite(amount)) return false;
+    const a = Math.max(0, Math.min(1, amount));
+    this.crops[i] = Math.max(0, Math.min(0.5, headStart));
+    this.nourishment = Math.min(100, this.nourishment + this.mealSize * a);
+    return true;
+  }
   battery: number;
   oxygen: number;
   dose = 0;
@@ -132,7 +141,43 @@ export class BaseSimulation {
   toggle() {
     if (this.state === "running") this.generator = !this.generator;
   }
+  /** Optional world shelter test (the habitat interior); falls back to the config box. */
+  shelterTest?: (p: { x: number; y: number; z: number }) => boolean;
+  /** Open hull punctures in the oxygen plant; each one vents reserve oxygen. */
+  punctures = 0;
+  nextLeakAt = -1;
+  leakedKg = 0;
+  /** Seals one puncture (oxygen plant minigame). */
+  repair() {
+    if (this.punctures <= 0) return false;
+    this.punctures--;
+    return true;
+  }
+  /** Breathing load multiplier from the stress meter (1 .. 1+penalty). */
+  breathing(stress = this.stress) {
+    const c = this.config;
+    return c.stressEnabled ? 1 + (c.stressOxygenPenalty * stress) / 100 : 1;
+  }
+  /** Signed oxygen flow in kg/h for the current location. */
+  oxygenFlow(powered: boolean, sheltered = this.inShelter, stress = this.stress) {
+    const c = this.config;
+    const make = powered && sheltered ? c.oxygenProduction : 0;
+    const use =
+      (c.oxygenConsumption + (sheltered ? 0 : c.evaOxygenConsumption)) *
+      this.breathing(stress);
+    return { make, use, leak: this.punctures * c.leakRate, net: make - use - this.punctures * c.leakRate };
+  }
+  /** Signed stress change per simulated hour at the given location. */
+  stressFlow(sheltered = this.inShelter, t = this.elapsed) {
+    const c = this.config;
+    if (!c.stressEnabled) return 0;
+    return (
+      doseRate(t, c, sheltered) * c.stressPerMGy +
+      (sheltered ? -c.stressRecoveryPerHour : c.stressEvaPerHour)
+    );
+  }
   isSheltered(p: { x: number; y: number; z: number }) {
+    if (this.shelterTest) return this.shelterTest(p);
     const c = this.config;
     return (
       Math.abs(p.x - c.shelterX) < c.shelterWidth / 2 &&
@@ -203,10 +248,17 @@ export class BaseSimulation {
     // Bounded midpoint quadrature for PV; analytic event-dose integral. Resource boundaries split steps.
     while (remaining > 1e-7 && this.state === "running") {
       const c = this.config;
+      if (this.nextLeakAt < 0) this.nextLeakAt = c.leakEverySols * SOL_SECONDS;
       let dt = Math.min(remaining, 30, this.endTime - this.elapsed);
+      // Punctures happen on a boundary so outcomes don't depend on frame timing.
+      if (this.nextLeakAt > this.elapsed + 1e-9)
+        dt = Math.min(dt, this.nextLeakAt - this.elapsed);
       const f = this.flows(this.elapsed + dt / 2);
-      const oxygenRate =
-        ((f.powered ? c.oxygenProduction : 0) - c.oxygenConsumption) / 3600;
+      // Midpoint stress: stress changes linearly over a step, so breathing load is exact.
+      const midStress = c.stressEnabled
+        ? Math.max(0, Math.min(100, this.stress + (this.stressFlow(sheltered, this.elapsed + dt / 2) * dt) / 7200))
+        : 0;
+      const oxygenRate = this.oxygenFlow(f.powered, sheltered, midStress).net / 3600;
       const batteryRate =
         f.surplus > 0
           ? (Math.min(f.surplus, c.chargeLimit) * c.chargeEfficiency) / 3600
@@ -252,17 +304,22 @@ export class BaseSimulation {
         sheltered,
       );
       this.dose += incomingDose;
+      // Stress: dose-driven, plus EVA strain outside; recovers inside the habitat.
       this.stress = c.stressEnabled
         ? Math.max(
             0,
             Math.min(
               100,
               this.stress +
-                incomingDose * c.stressPerMGy -
-                (sheltered ? (c.stressRecoveryPerHour * dt) / 3600 : 0),
+                incomingDose * c.stressPerMGy +
+                ((sheltered ? -c.stressRecoveryPerHour : c.stressEvaPerHour) *
+                  dt) /
+                  3600,
             ),
           )
         : 0;
+      if (oxygenRate < 0)
+        this.leakedKg += (this.punctures * c.leakRate * dt) / 3600;
       this.oxygen = Math.max(
         0,
         Math.min(c.oxygenCapacity, this.oxygen + oxygenRate * dt),
@@ -299,6 +356,13 @@ export class BaseSimulation {
         this.dust - (c.dustLossPerSol * dt) / SOL_SECONDS,
       );
       this.generatorPowered = f.powered;
+      if (this.elapsed >= this.nextLeakAt - 1e-9) {
+        if (this.punctures < c.maxPunctures) this.punctures++;
+        // Deterministic jitter keeps runs comparable between attempts.
+        const k = this.punctures + Math.floor(this.elapsed / SOL_SECONDS);
+        this.nextLeakAt +=
+          c.leakEverySols * SOL_SECONDS * (0.75 + 0.5 * ((k * 0.618) % 1));
+      }
       if (this.nourishment <= 0) this.lose("Food depleted");
       else if (this.oxygen <= 1e-8) this.lose("Oxygen depleted");
       else if (this.dose >= c.doseLimitMGy - 1e-8)
@@ -322,5 +386,41 @@ export class BaseSimulation {
       this.cleanCount++;
       this.cleanedAt = this.elapsed;
     }
+  }
+  /** Transmission when a hands-on service session began. */
+  serviceStart = -1;
+  /** How dirty the array is, 0 (fully restored) .. 1 (at the dust floor). */
+  dirtiness() {
+    const c = this.config,
+      span = c.cleanRestore - c.dustFloor;
+    return span > 1e-6
+      ? Math.max(0, Math.min(1, (c.cleanRestore - this.dust) / span))
+      : 0;
+  }
+  beginService() {
+    this.serviceStart = this.dust;
+  }
+  /**
+   * Hands-on brush cleaning: `fraction` of the visible dust removed so far.
+   * Transmission recovers proportionally and never drops below its current value.
+   */
+  scrub(fraction: number) {
+    if (this.serviceStart < 0 || !Number.isFinite(fraction)) return;
+    if (this.state !== "running" && this.state !== "paused") return;
+    const f = Math.max(0, Math.min(1, fraction));
+    const target =
+      this.serviceStart + (this.config.cleanRestore - this.serviceStart) * f;
+    this.dust = Math.max(this.dust, Math.min(this.config.cleanRestore, target));
+    this.cleanProgress = f * this.config.cleanSeconds;
+  }
+  finishService(complete: boolean) {
+    if (this.serviceStart < 0) return;
+    if (complete && (this.state === "running" || this.state === "paused")) {
+      this.dust = this.config.cleanRestore;
+      this.cleanCount++;
+      this.cleanedAt = this.elapsed;
+    }
+    this.serviceStart = -1;
+    this.cleanProgress = 0;
   }
 }

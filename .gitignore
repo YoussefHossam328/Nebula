@@ -1,4 +1,13 @@
 node_modules/
 dist/
+shots/
 test-results/
 playwright-report/
+/.manus-webdev/preview-identity.json
+# Assets restored from assets.lock.json
+/assets/share/favicon.png
+/assets/share/og.png
+
+# Local secrets (NASA API key for the APOD uplink)
+.env.local
+*.local

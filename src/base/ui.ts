@@ -1,4 +1,4 @@
-import { stationLayout } from "../layout";
+import { stationLayout, insideHabitat } from "../layout";
 import GUI from "lil-gui";
 import {
   baseDefaults,
@@ -12,6 +12,7 @@ import {
 import { BaseSimulation, doseRate } from "./model";
 import { ARRAY_POSITION } from "./visuals";
 import context from "../data/donki-context.json";
+import { applySave, type MissionSave } from "../save";
 export function baseUI(
   gui: GUI,
   clear: () => void,
@@ -22,9 +23,16 @@ export function baseUI(
   try {
     const v = localStorage.getItem("nebula.base");
     if (v) saved = decodeBase(v);
+    // Sol length changed from 180 s to 120 s; migrate untouched old defaults.
+    if (saved.realSecondsPerSol === 180) saved.realSecondsPerSol = 120;
   } catch {}
+  const legacyLab = new URLSearchParams(location.search).has("lab");
+  const attach = (x: BaseSimulation) => {
+    if (!legacyLab) x.shelterTest = insideHabitat;
+    return x;
+  };
   const draft = { ...saved };
-  let sim = new BaseSimulation(saved);
+  let sim = attach(new BaseSimulation(saved));
   let active = false,
     last = performance.now();
   const host = document.createElement("section");
@@ -61,7 +69,7 @@ export function baseUI(
     const validated = validateBase(draft);
     stopLegacy();
     saved = validated;
-    sim = new BaseSimulation(saved);
+    sim = attach(new BaseSimulation(saved));
     sim.start();
     active = true;
     host.hidden = false;
@@ -97,7 +105,7 @@ export function baseUI(
     render();
   };
   el("base-restart").onclick = () => {
-    sim = new BaseSimulation(saved);
+    sim = attach(new BaseSimulation(saved));
     sim.start();
     clear();
     last = performance.now();
@@ -156,6 +164,10 @@ export function baseUI(
         "initialOxygen",
         "oxygenConsumption",
         "oxygenProduction",
+        "evaOxygenConsumption",
+        "leakRate",
+        "leakEverySols",
+        "maxPunctures",
       ],
     ],
     [
@@ -183,10 +195,16 @@ export function baseUI(
     ],
     [
       "Recovery · fictional stress",
-      ["stressEnabled", "stressPerMGy", "stressRecoveryPerHour"],
+      [
+        "stressEnabled",
+        "stressPerMGy",
+        "stressRecoveryPerHour",
+        "stressEvaPerHour",
+        "stressOxygenPenalty",
+      ],
     ],
     [
-      "Shelter · metres / transmission",
+      "Habitat shielding · transmission (box: legacy lab only)",
       [
         "shelterX",
         "shelterZ",
@@ -266,7 +284,7 @@ export function baseUI(
   sources.close();
   const info = document.createElement("div");
   info.className = "base-methods";
-  info.innerHTML = `<p>Radiation stress is a fictional recoverable game meter, not a NASA dose measurement or biological prediction. Stress gain per mGy and recovery per sheltered simulation hour are editable game-balance values. Reaching 100% is a warning, not an additional loss rule. The physical dose limit still applies independently.</p><p>Radiation is RAD-reference absorbed exposure (mGy), not mSv or a human medical assessment. The 5 mGy limit is an editable operational game rule, not a lethal-dose claim.</p><p>May 20, 2024: NASA/JPL reports 8,100 µGy = 8.1 mGy. Our triangular 8-hour curve is reconstructed, not measured. Background is included in this event total once; modeled shielding changes exposure.</p><p>Baseline 0.21 mGy/Earth-day: Curiosity surface plastic-detector/tissue-reference value reported by Hassler et al. (2014), Science, doi:10.1126/science.1244797. Not a constant for every Mars site or season.</p><p>Solar irradiance, dust, equipment efficiencies and shielding transmission are editable assumptions. Oxygen production is a simplified CO₂-processing plant; 30 kWh/kg at default settings is a gameplay hardware assumption, not MOXIE's measured specification. Feedstock is assumed available.</p><p>Automatic load shedding preserves essential base/occupied shelter loads before oxygen production. Passive shielding persists without electricity. Unserved electrical demand is reported; no unmodeled instantaneous death is invented.</p><p><a href="https://www.jpl.nasa.gov/news/nasa-watches-mars-light-up-during-epic-solar-storm/" target="_blank" rel="noopener">NASA/JPL event reference</a> · <a href="https://doi.org/10.1126/science.1244797" target="_blank" rel="noopener">RAD surface paper</a> · <a href="https://pds-ppi.igpp.ucla.edu/data/MSL-M-RAD-3-RDR-V1.0/" target="_blank" rel="noopener">RAD archive</a></p>`;
+  info.innerHTML = `<p>Radiation stress is a fictional recoverable game meter, not a NASA dose measurement or biological prediction. Stress gain per mGy and recovery per sheltered simulation hour are editable game-balance values. Stress also rises during time outside (EVA strain) and falls inside the habitat; high stress raises breathing load, so oxygen drains faster. Reaching 100% is a warning, not an additional loss rule. The physical dose limit still applies independently.</p><p>Radiation is RAD-reference absorbed exposure (mGy), not mSv or a human medical assessment. The 5 mGy limit is an editable operational game rule, not a lethal-dose claim.</p><p>May 20, 2024: NASA/JPL reports 8,100 µGy = 8.1 mGy. Our triangular 8-hour curve is reconstructed, not measured. Background is included in this event total once; modeled shielding changes exposure.</p><p>Baseline 0.21 mGy/Earth-day: Curiosity surface plastic-detector/tissue-reference value reported by Hassler et al. (2014), Science, doi:10.1126/science.1244797. Not a constant for every Mars site or season.</p><p>Solar irradiance, dust, equipment efficiencies and shielding transmission are editable assumptions. Oxygen production is a simplified CO₂-processing plant; 30 kWh/kg at default settings is a gameplay hardware assumption, not MOXIE's measured specification. Feedstock is assumed available.</p><p>Automatic load shedding preserves essential base/occupied shelter loads before oxygen production. Passive shielding persists without electricity. The habitat modules are the radiation shelter (assumed regolith-covered); outside, your suit draws from the reserve and plant output only refills it while you are indoors. Oxygen plant punctures are a game mechanic. Unserved electrical demand is reported; no unmodeled instantaneous death is invented.</p><p><a href="https://www.jpl.nasa.gov/news/nasa-watches-mars-light-up-during-epic-solar-storm/" target="_blank" rel="noopener">NASA/JPL event reference</a> · <a href="https://doi.org/10.1126/science.1244797" target="_blank" rel="noopener">RAD surface paper</a> · <a href="https://pds-ppi.igpp.ucla.edu/data/MSL-M-RAD-3-RDR-V1.0/" target="_blank" rel="noopener">RAD archive</a></p>`;
   const record = document.createElement("p");
   record.textContent = `DONKI archived context: ${context.records.length} record(s); ${context.status}; retrieved ${context.retrievedAt ?? "not fetched"}. Context only, not a Mars dosimeter.`;
   info.append(record);
@@ -299,10 +317,11 @@ export function baseUI(
       (sim.battery / c.batteryCapacity) * 100,
       `${(sim.battery / 1000).toFixed(2)} / ${(c.batteryCapacity / 1000).toFixed(1)} kWh`,
     );
+    const o2 = sim.oxygenFlow(f.powered);
     pct(
       "base-oxygen",
       (sim.oxygen / c.oxygenCapacity) * 100,
-      `${sim.oxygen.toFixed(3)} kg · maker ${sim.generator ? (f.powered ? "ON" : "SHED: insufficient power") : "OFF"}`,
+      `${sim.oxygen.toFixed(3)} kg · maker ${sim.generator ? (f.powered ? "ON" : "SHED: insufficient power") : "OFF"} · ${o2.net >= 0 ? "+" : ""}${o2.net.toFixed(3)} kg/h${sim.inShelter ? "" : " (EVA)"}${sim.punctures ? ` · ${sim.punctures} leak${sim.punctures > 1 ? "s" : ""}` : ""}`,
     );
     pct(
       "base-dose",
@@ -310,25 +329,23 @@ export function baseUI(
       `${sim.dose.toFixed(3)} / ${c.doseLimitMGy.toFixed(2)} mGy · ${doseRate(sim.elapsed, c, sim.inShelter).toFixed(3)} mGy/h`,
     );
     el("base-stress-block").hidden = !c.stressEnabled;
-    const stressRate =
-      doseRate(sim.elapsed, c, sim.inShelter) * c.stressPerMGy -
-      (sim.inShelter ? c.stressRecoveryPerHour : 0);
+    const stressRate = sim.stressFlow();
     pct(
       "base-stress",
       sim.stress,
-      `${sim.stress.toFixed(1)}% · ${sim.state !== "running" ? "paused" : sim.inShelter && stressRate < 0 ? "recovering in shelter" : stressRate > 0 ? "rising" : "stable"}`,
+      `${sim.stress.toFixed(1)}% · ${sim.state !== "running" ? "paused" : sim.inShelter && stressRate < 0 ? "recovering in habitat" : stressRate > 0 ? (sim.inShelter ? "rising (radiation)" : "rising (EVA)") : "stable"}`,
     );
     el("base-power").textContent =
       `PV ${f.pv.toFixed(0)} W · load ${f.load.toFixed(0)} W · net ${(f.pv - f.load).toFixed(0)} W · unmet ${f.unserved.toFixed(0)} W`;
     el("base-location").textContent =
-      `${sim.inShelter ? "Inside storm shelter" : "Outside"} · array transmission ${(sim.dust * 100).toFixed(0)}% · ${c.tracking ? "Sun tracking" : "Fixed panel"}`;
+      `${sim.inShelter ? (legacyLab ? "Inside storm shelter" : "Inside habitat (shielded)") : "Outside · EVA"} · array transmission ${(sim.dust * 100).toFixed(0)}% · ${c.tracking ? "Sun tracking" : "Fixed panel"}`;
     const outsideRate = doseRate(sim.elapsed, c, false);
     const shelteredRate = doseRate(sim.elapsed, c, true);
     const reduction =
       outsideRate > 0 ? (1 - shelteredRate / outsideRate) * 100 : 0;
     el("base-exposure-note").textContent = sim.inShelter
-      ? `Shelter reduces incoming dose rate by ${reduction.toFixed(0)}%. Previously absorbed dose remains; the separate stress meter can recover.`
-      : "Accumulated dose does not decay. Enter the storm shelter to reduce incoming exposure.";
+      ? `Habitat walls reduce incoming dose rate by ${reduction.toFixed(0)}%. Previously absorbed dose remains; the separate stress meter can recover.`
+      : "Accumulated dose does not decay. Go inside the habitat to reduce incoming exposure.";
     el("base-event").textContent = sim.eventState();
     (el("base-clean") as HTMLProgressElement).value =
       sim.cleanProgress / c.cleanSeconds;
@@ -348,6 +365,16 @@ export function baseUI(
     start,
     target,
     pause,
+    /** Rebuild the running simulation from a local mission save. */
+    restore(save: MissionSave) {
+      start();
+      sim = attach(new BaseSimulation(save.config));
+      sim.start();
+      applySave(sim, save);
+      last = performance.now();
+      onConfig(sim.config);
+      render();
+    },
     resume() {
       sim.resume();
       last = performance.now();
@@ -383,8 +410,10 @@ export function baseUI(
           : target(p) === "array"
             ? `Hold E · clean solar array (${saved.cleanSeconds}s; release cancels)`
             : target(p) === "oxygen"
-              ? `E · ${sim.generator ? "Disable" : "Enable"} oxygen production`
-              : "Maintain panels, manage oxygen, seek shelter during the particle event.";
+              ? legacyLab
+                ? `E · ${sim.generator ? "Disable" : "Enable"} oxygen production`
+                : `E · Service oxygen plant · maker ${sim.generator ? "ON" : "OFF"}${sim.punctures ? ` · ${sim.punctures} LEAK${sim.punctures > 1 ? "S" : ""}` : ""}`
+              : "Maintain panels, manage oxygen, go indoors during the particle event.";
       render();
     },
     interact(p: { x: number; y: number; z: number }) {

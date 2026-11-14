@@ -1,17 +1,29 @@
-# Nebula · Mars field lab
+# Nebula
 
-A keyboard-first Mars movement foundation for the Junior Astronaut Mission Trainer challenge. Three.js renders the scene; Rapier provides character collision. This sandbox contains no mission or educational resource simulation yet.
+A single-player Mars survival field lab built with Three.js and Rapier. Learn the base in an eight-lesson tutorial, then keep it running for seven sols: track the Sun, scrub dust off the solar array, balance battery and oxygen, grow food, and take cover in the storm shelter during a solar particle event. The power, oxygen, crop and radiation models are educational simplifications; their sources and caveats live in **Debug / settings → Base · seven-sol scenario → Sources and assumptions**.
+
+## What's in the current build
+
+- **Panel service minigame.** At the solar array's service ring press **E** (or **USE**) to open the service hatch, then drag across the panel with the mouse or a finger. Fine dust wipes off quickly; dark caked spots resist and need several passes. Cleaning raises array transmission as you go, and a fully clean panel counts as one cleaning. **Esc / Done** leaves early and keeps whatever you already cleaned. The simulation clock keeps running while you scrub.
+- **Mission save / resume.** The challenge autosaves to this browser's localStorage every few seconds, on pause, on returning to the menu, and when the tab closes. The main menu then offers **Continue mission · Sol N / 7**. Starting a new challenge or finishing a run clears the save. Nothing leaves the device.
+- **Touch controls.** On touch devices (or with `?touch` in the URL) a virtual stick plus USE / JUMP / CROUCH / RUN buttons appear. RUN and CROUCH toggle. The buttons send the same key codes as the keyboard, so tutorials and interactions behave the same way.
+- **Visual effects.** A Mars sky dome with a blue-tinted sunset halo and night stars, smooth dawn and dusk lighting, ACES tone mapping, wind-blown dust motes that thicken into a storm haze during dust events, footstep, jump and landing puffs, a sparkle burst when the array is cleaned, a pulsing vignette during the particle event, and fade-in menus. All effects are cosmetic and do not feed the simulation.
+- **Procedural jump/crouch motion.** The supplied `player.glb` ships Idle and Walk clips only. Missing Jump and Crouch states now blend procedural bone offsets (knee bend, hip drop, arm lift, landing dip) on top of the authored clips. The GLB file is unchanged, and properly named `Jump` / `Crouch` clips take priority automatically if you add them later.
+- **Debug window.** Opening **Debug / settings** during play pauses the game. Closing it again (button or **Esc**) resumes play.
+- **Smaller download.** Rapier now loads from `@dimforge/rapier3d`, and its WASM binary streams as a separate cacheable file (`src/vendor/rapier-wasm.js`) instead of a 4 MB base64 string inside the JS. three.js, Rapier glue and the debug UI are split into their own chunks. A loading screen shows real progress and offers **Retry** if loading fails.
+- **Unused audio is not shipped.** Original WAV sources that the game does not play are kept under `art-source/audio/`, outside `public/`.
+- **Legacy lab** (`?lab`) has a tidier panel layout, pill-style world labels and readable mobile sizing. It keeps the original hold-E cleaning, so the older tests and tuning flows still work.
 
 ## Run
 
-Use Node 24 and npm. Run `npm ci`, then `npm run dev`. Vite serves the application under `/Nebula/` (use the address printed by Vite plus that path). `npm run build` checks TypeScript and builds `dist`; `npm run preview` serves the production build.
+Use Node 24 and npm. Run `npm ci`, then `npm run dev`. The build uses relative asset paths (`base: "./"`), so the same `dist` works at a domain root, a GitHub Pages sub-path or a static file host. `npm run build` checks TypeScript and builds `dist`; `npm run preview` serves the production build.
 
 - WASD/arrows: camera-relative movement
 - Shift: run; Space: fixed jump with air steering
 - Hold C: crouch; E: inspect the nearby field beacon
 - R: reset to spawn
 
-Touch input is deferred; mobile rendering currently requires an external keyboard for play. Click the scene to focus it. Keyboard input does not capture tuning text fields.
+Touch devices get an on-screen stick and action buttons automatically; add `?touch` to force them on a desktop. Click the scene to focus it. Keyboard input does not capture tuning text fields.
 
 ## Tune
 
@@ -27,15 +39,15 @@ For Mixamo animations: download the character once with skin, then each compatib
 
 ## Checks
 
-`npm test` runs settings and real Rapier controller tests. `npm run typecheck` verifies types. Install Chromium once with `npx playwright install chromium`, then run `npm run build && npm run test:browser`. Browser tests exercise initialization, keyboard movement, jumping, crouching, reset and mobile viewport rendering. Headless browser emulation is not physical-device performance testing.
+`npm test` runs settings and real Rapier controller tests. `npm run typecheck` verifies types. Install Chromium once with `npx playwright install chromium`, then run `npm run build && npm run test:browser`. Browser tests exercise initialization, keyboard movement, jumping, crouching, reset, mobile viewport rendering, the panel-scrub minigame, mission save/resume, Debug close-to-resume and touch movement (`browser-tests/polish.spec.ts`). Headless browser emulation is not physical-device performance testing.
 
 ## GitHub Pages CI/CD
 
-`.github/workflows/pages.yml` installs locked dependencies, checks types, runs physics/settings tests, builds and runs a Chromium smoke test. Pull requests only validate; successful `main` builds deploy using GitHub Pages artifacts and OIDC. In repository **Settings → Pages**, select **GitHub Actions** as the build source. The expected path is `https://YoussefHossam328.github.io/Nebula/` once a deployment succeeds. Changing the repository name requires updating `vite.config.ts`.
+`.github/workflows/pages.yml` installs locked dependencies, checks types, runs physics/settings tests, builds and runs a Chromium smoke test. Pull requests only validate; successful `main` builds deploy using GitHub Pages artifacts and OIDC. In repository **Settings → Pages**, select **GitHub Actions** as the build source. The expected path is `https://YoussefHossam328.github.io/Nebula/` once a deployment succeeds. Relative asset paths mean renaming the repository needs no config change.
 
 ## Limits
 
-Static terrain collisions; decorative rocks/mountains do not collide. Camera collision and fading are deferred: scenery may occlude the character in some positions. No dynamic object pushing, touch/gamepad input, missions, accounts or backend. The renderer currently loads Rapier's bundled WASM; initial download is larger than a render-only demo. Actual phone/browser and GPU testing remains necessary before claiming broad compatibility. Future educational gameplay should implement genuine survival trade-offs and attribute any NASA datasets used, marking archived data honestly.
+Static terrain collisions; decorative rocks/mountains do not collide. Camera collision and fading are deferred: scenery may occlude the character in some positions. No dynamic object pushing, gamepad input, accounts or backend. The Rapier WASM (about 1.2 MB gzipped) is still the largest download, but it now streams separately and caches. Actual phone/browser and GPU testing remains necessary before claiming broad compatibility. Future educational gameplay should implement genuine survival trade-offs and attribute any NASA datasets used, marking archived data honestly.
 
 ## Optional resource training
 
@@ -53,12 +65,12 @@ All tuning is in the **Settings** panel at the top right: Movement, Physics, Cam
 
 ## Seven-sol base scenario
 
-Click **Start base maintenance · 7 sols** in the training HUD, then click/focus the scene. The old two-minute exercise and pressure-free sandbox remain available. The scenario starts at morning and lasts seven Mars sols at 180 real seconds per sol (about 21 minutes before pauses).
+Click **Start base maintenance · 7 sols** in the training HUD, then click/focus the scene. The old two-minute exercise and pressure-free sandbox remain available. The scenario starts at morning and lasts seven Mars sols at 120 real seconds per sol (about 14 minutes before pauses).
 
 - The array west of spawn follows the sun with an idealized dual-axis tracker, adjustable tilt limits, and explicit tracker electrical draw. Disable tracking to compare fixed orientation. Tracking is a modeled hardware choice, not a claim that all Mars arrays track.
-- Hold E near the array for four real seconds to clean it. Release, leave range, change target or pause to cancel. Dust transmission and cleaning effectiveness are editable. Route around the oxygen unit rather than walking through it.
+- In the main game, press E at the array to open the panel-scrub minigame (see above). In the legacy lab (`?lab`), hold E near the array for four real seconds to clean it. Release, leave range, change target or pause to cancel. Dust transmission and cleaning effectiveness are editable. Route around the oxygen unit rather than walking through it.
 - Press E near the oxygen unit to enable/disable CO₂-processing production. A powered plant produces 0.05 kg/hour using 1.5 kW in the starting preset. Feedstock is assumed available. These hardware rates are assumptions, not MOXIE performance claims.
-- Walk into the shelter northeast of spawn through its open south side when the particle-event warning arrives. Passive shielding works even without electricity. The environmental-support load is added while occupied.
+- Go inside the habitat when the particle-event warning arrives: in the main game the habitat modules are the radiation shelter (the separate shelter box exists only in the `?lab` sandbox). Passive shielding works even without electricity. The environmental-support load is added while indoors.
 - Dose reaching the operational limit or oxygen reaching zero loses the run immediately. Empty battery sheds oxygen production; remaining essential load deficits are displayed. The game does not invent a separate instant-death rule for missing power. Survive all seven sols to complete the run.
 - R/falling only resets position. Pause stops all scenario systems and cancels cleaning. Hidden tabs and focus loss pause the scenario and require explicit Resume. A scenario restart resets supplies, dust and dose.
 
@@ -88,13 +100,13 @@ Facing follows the last nonzero movement input and remains fixed during braking.
 
 `public/models/player.glb` is the user-supplied astronaut. The embedded clips are `Armature|mixamo.com|Layer0` and `mixamo.com` (both approximately 1.617 seconds, closely related locomotion exports). The second supplies walking and faster running playback. Horizontal hip travel is removed at runtime so animation cannot move the mesh away from the Rapier body. The loaded model is fitted to a 1.6 m reference visual height; its physics collider stays independent.
 
-There are no separately named authored idle/jump/crouch clips in this file. Missing states use a static pose sampled from locomotion; crouching retains the prototype visual-height adjustment. This is an explicit fallback, not a claim of a complete animation set. The asset manifest supports adding properly named clips later. Original GLB data is retained unchanged. Adjust visual scale, forward-direction correction, foot offset, crossfade time and locomotion playback in **Settings → Player model and animation**.
+There are no separately named authored jump/crouch clips in this file. Missing states use procedural bone offsets layered on the authored Idle/Walk clips (see `proceduralPose` in `src/assets.ts`). This is an explicit fallback, not a claim of a complete animation set. The asset manifest supports adding properly named clips later. Original GLB data is retained unchanged. Adjust visual scale, forward-direction correction, foot offset, crossfade time and locomotion playback in **Settings → Player model and animation**.
 
 Turning now interpolates the shortest arc between headings while movement input is active. Release freezes the visible heading, so easing does not introduce an extra turn afterward. **turnResponsiveness** controls how quickly turns happen. Keyboard movement still requests eight directions; the visual transition between them is continuous.
 
 The nine user-supplied WAVs live under `public/audio/`: an eight-second background loop, three walking variations, three sprint variations, jump and landing. Browser playback unlocks after a click/key press. Steps are based on actual grounded travel (not merely holding a key against a wall). Audio suspends on focus loss/hidden tabs, with independent master/ambience/effects volumes and step distances under **Settings → Audio**; **Audio · preview** tests the landing sound. If browser audio is unavailable, the game continues.
 
-Physical dose remains cumulative. The exposure HUD now explicitly distinguishes past absorbed mGy from the incoming dose rate and shows the shelter’s modeled rate reduction. A separate recoverable game stress meter is pending the user's choice; no scientific dose-decay mechanic has been invented.
+Physical dose remains cumulative. The exposure HUD now explicitly distinguishes past absorbed mGy from the incoming dose rate and shows the shelter’s modeled rate reduction. A separate recoverable game stress meter is implemented (see below); no scientific dose-decay mechanic has been invented.
 
 ## Updated idle and recoverable stress
 
@@ -113,3 +125,35 @@ The uploaded `SolarPanel.glb` is integrated through `src/base/solar-model.ts`. I
 The initial GLB had one material pointing at the dirty atlas. The modeler’s subsequently supplied clean atlas is now embedded alongside it: two named materials and standard Clean/Dirty variants, with the original UV coordinates and geometry preserved. Completing cleaning selects the artist’s clean atlas; dust below the editable cleanVisualThreshold selects dirty. Both states are real supplied artwork; see `docs/SOLAR_ASSET_REPORT.md`.
 
 To reproduce the combined asset, run `python3 scripts/pack-solar-materials.py --source art-source/solar/SolarPanel-original.glb --clean art-source/solar/Solar-panel-clean.png --output public/models/SolarPanel.glb`. This embeds two PNGs and named Clean/Dirty material variants without remapping UVs or editing pixels. The runtime recognizes the material names and switches the complete model at the clean-state threshold. Update the asset URL revision when replacing the file so existing browsers fetch the new GLB.
+
+## Survival pass 2: habitat shelter, EVA oxygen, leaks, harvest, gait
+
+- **Habitat is the shelter.** `insideHabitat()` in `src/layout.ts` (rooms + corridors) drives both the roof cutaway and radiation shielding. The old storm-shelter box remains only in `?lab`.
+- **Oxygen outside.** Indoors the maker refills the reserve; outside your suit draws extra (`evaOxygenConsumption`, default 0.045 kg/h) and the maker's output does not reach you. HUD shows the net kg/h and "(EVA)".
+- **Stress that moves.** Stress now rises with dose *and* time outside (`stressEvaPerHour`), recovers indoors, and high stress raises breathing load (`stressOxygenPenalty`). Geiger clicks follow the incoming dose rate.
+- **Oxygen plant punctures** (game mechanic, not NASA data). Lines puncture on a deterministic schedule (`leakEverySols`, `maxPunctures`, `leakRate` each venting the reserve). Press E at the oxygen station: listen for the panned hiss, hold to spray leak detector until a leak foams, then press on it and circle twice to wind tape. The maker switch lives in this view. Leak timing is split on step boundaries so results don't depend on frame rate.
+- **Harvest minigame.** Press E at ripe crop beds: swipe across a red truss stalk above its knuckle for a clean cut (full value); cutting near the fruit bruises it, cutting green trusses wastes them, nicking the main stem costs yield, and trimming yellow leaves gives the replanted bed a head start.
+- **Day/night.** 120 s per sol (old saved 180 s settings migrate). Light fades over a long twilight with a continuous vignette and a cool moonlit ambient; a helmet lamp fades in after dusk.
+- **Gait and footsteps.** Locomotion uses the clean `Action.001` walk (the `walk again` take has a broken first key that popped every loop and caused visible stutter). Walk and a derived run (amplified stride, forward lean) blend continuously by speed, playback rate matches ground speed via the authored stride, and footstep sounds fire on the animation's foot contacts. Audio gain automation is only rescheduled when values change.
+
+## Real Mars terrain and NASA picture uplink
+
+**Terrain.** The mission map is a 4.8 km patch of real Mars around the western rim of
+Jezero Crater (18.592° N, 77.249° E, −2,291 m). It is baked by `scripts/bake-terrain.py`
+from the NASA Mars 2020 Terrain Relative Navigation products hosted by USGS Astrogeology
+(CTX stereo DTM at 20 m/px and the CTX 6 m/px orthomosaic; credit NASA/JPL-Caltech/MSSS/USGS).
+Only the site window is read, over HTTP range requests. The result is `public/terrain/`
+(`site.json`, a 241×241 decimetre height grid, and a matching orthophoto, ~280 KB total).
+All axes are divided by 16, so the slopes keep their real steepness. The 24 m pad under the
+base is levelled and blends into the measured relief by 46 m, with ~370 m (real) of rim and
+knobs rising around it. Physics uses a Rapier triangle mesh built from the same triangles that
+are rendered. The `?lab` sandbox keeps the original flat ground.
+
+**APOD uplink.** At the end of each sol, a non-blocking "Earth uplink" card shows a NASA
+Astronomy Picture of the Day. Clicking the image expands it, and the card collapses to a chip
+that reopens it. The game asks `api.nasa.gov/planetary/apod` first, using
+`VITE_NASA_API_KEY` from `.env.local` (gitignored; `DEMO_KEY` if absent). Since APOD moved to
+science.nasa.gov, that API answers every date with a generic "NASA Science" placeholder. The
+game detects the placeholder and uses eight real Mars APOD entries baked from the official
+article pages by `scripts/bake-apod.py` (`public/apod/`, agency-credited images only, each
+linked to its article). Note that any key compiled into a static build is visible to players.

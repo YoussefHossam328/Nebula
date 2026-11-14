@@ -44,7 +44,7 @@ test("renders physics sandbox and keyboard movement, jump, crouch, reset", async
     .toBe(false);
   await expect
     .poll(() => page.evaluate(() => (window as any).nebula.grounded), {
-      timeout: 6000,
+      timeout: 20000, // headless software rendering can run at ~4 FPS
     })
     .toBe(true);
   await page.setViewportSize({ width: 390, height: 844 });

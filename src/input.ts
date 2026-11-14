@@ -1,6 +1,8 @@
 export class Input {
   keys = new Set<string>();
   pressed = new Set<string>();
+  /** Virtual joystick vector from touch controls (x right, z forward). */
+  analog = { x: 0, z: 0 };
   constructor(canvas: HTMLCanvasElement) {
     const codes = [
       "KeyW",
@@ -49,14 +51,17 @@ export class Input {
   clear() {
     this.keys.clear();
     this.pressed.clear();
+    this.analog = { x: 0, z: 0 };
   }
   axes() {
     let x =
       Number(this.down("KeyD", "ArrowRight")) -
-      Number(this.down("KeyA", "ArrowLeft"));
+      Number(this.down("KeyA", "ArrowLeft")) +
+      this.analog.x;
     let z =
       Number(this.down("KeyW", "ArrowUp")) -
-      Number(this.down("KeyS", "ArrowDown"));
+      Number(this.down("KeyS", "ArrowDown")) +
+      this.analog.z;
     const l = Math.hypot(x, z);
     if (l > 1) {
       x /= l;

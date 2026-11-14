@@ -7,7 +7,7 @@ export const defaults = {
   modelOffsetY: 0,
   animationBlend: 0.18,
   walkAnimationRate: 1,
-  runAnimationRate: 1.6,
+  runAnimationRate: 1,
   audioEnabled: true,
   masterVolume: 0.55,
   ambientVolume: 0.25,
@@ -150,7 +150,10 @@ export function encode(settings: Settings) {
 export function load(): Settings {
   try {
     const saved = localStorage.getItem("nebula.settings");
-    return saved ? decode(saved) : { ...defaults };
+    const s = saved ? decode(saved) : { ...defaults };
+    // Animation rates became multipliers on speed-matched cadence; drop the old default.
+    if (s.runAnimationRate === 1.6) s.runAnimationRate = 1;
+    return s;
   } catch {
     return { ...defaults };
   }

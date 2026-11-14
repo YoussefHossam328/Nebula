@@ -2,7 +2,7 @@ export const SOL_SECONDS = 88775.244;
 export const baseDefaults = {
   version: 2,
   sols: 7,
-  realSecondsPerSol: 180,
+  realSecondsPerSol: 120,
   startHour: 6,
   area: 60,
   panelEfficiency: 0.22,
@@ -48,6 +48,12 @@ export const baseDefaults = {
   shelterWidth: 4,
   shelterDepth: 4,
   shelterHeight: 3,
+  evaOxygenConsumption: 0.045,
+  leakRate: 0.03,
+  leakEverySols: 1.6,
+  maxPunctures: 3,
+  stressEvaPerHour: 1.2,
+  stressOxygenPenalty: 0.5,
 };
 export type BaseConfig = typeof baseDefaults;
 export const limits: Record<keyof BaseConfig, [number, number, number]> = {
@@ -99,23 +105,33 @@ export const limits: Record<keyof BaseConfig, [number, number, number]> = {
   shelterWidth: [1, 10, 0.1],
   shelterDepth: [1, 10, 0.1],
   shelterHeight: [1.8, 6, 0.1],
+  evaOxygenConsumption: [0, 10, 0.001],
+  leakRate: [0, 10, 0.001],
+  leakEverySols: [0.1, 30, 0.1],
+  maxPunctures: [0, 6, 1],
+  stressEvaPerHour: [0, 100, 0.1],
+  stressOxygenPenalty: [0, 2, 0.05],
 };
+/** Keys added after the first v2 exports; missing values fall back to defaults. */
+const OPTIONAL_KEYS = [
+  "stressEnabled",
+  "stressPerMGy",
+  "stressRecoveryPerHour",
+  "cleanVisualThreshold",
+  "evaOxygenConsumption",
+  "leakRate",
+  "leakEverySols",
+  "maxPunctures",
+  "stressEvaPerHour",
+  "stressOxygenPenalty",
+];
 export function validateBase(input: unknown): BaseConfig {
   if (!input || typeof input !== "object")
     throw Error("Expected base scenario object");
   const s = { ...baseDefaults };
   for (const k of Object.keys(s) as (keyof BaseConfig)[]) {
     const v = (input as Record<string, unknown>)[k];
-    if (
-      v === undefined &&
-      [
-        "stressEnabled",
-        "stressPerMGy",
-        "stressRecoveryPerHour",
-        "cleanVisualThreshold",
-      ].includes(k)
-    )
-      continue;
+    if (v === undefined && OPTIONAL_KEYS.includes(k)) continue;
     if (typeof v !== typeof s[k]) throw Error(`Invalid ${k}`);
     if (
       typeof v === "number" &&

@@ -13,9 +13,9 @@ export const generalHelp: Record<keyof Settings, string> = {
   animationBlend:
     "Crossfade duration in real seconds between available animation states.",
   walkAnimationRate:
-    "Playback speed multiplier for the supplied locomotion cycle while walking.",
+    "Multiplier on the speed-matched walk cadence (1 = feet match ground speed).",
   runAnimationRate:
-    "Playback speed multiplier for that locomotion cycle while running; this file has no separately named sprint clip.",
+    "Multiplier on the speed-matched run cadence. The run is derived from the supplied walk (longer stride, forward lean) since the file has no sprint clip.",
   audioEnabled:
     "Master sound switch. Browser audio starts after a click or keypress.",
   masterVolume: "Overall sound volume from 0 (silent) to 1 (full).",
@@ -24,9 +24,9 @@ export const generalHelp: Record<keyof Settings, string> = {
   effectsVolume:
     "Relative volume of footsteps, jump and landing, before master volume.",
   walkStepDistance:
-    "Actual ground distance in metres between walking sounds. Larger values play fewer steps.",
+    "Fallback only: ground distance between walking sounds when the character model has no foot contacts. Normally steps follow the animation.",
   runStepDistance:
-    "Actual ground distance in metres between sprint sounds. No ground steps play while airborne.",
+    "Fallback only: ground distance between sprint sounds. Normally steps follow the animation; none play while airborne.",
   gravity:
     "Downward acceleration in m/s². Higher gravity makes falls faster and changes the jump launch speed.",
   walk: "Walking speed in metres per second.",
@@ -161,6 +161,17 @@ export const baseHelp: Record<Exclude<keyof BaseConfig, "version">, string> = {
     "Shelter depth in metres along Z; the entrance is on the negative-Z side.",
   shelterHeight:
     "Shelter height in metres. Protection applies only below this height.",
+  evaOxygenConsumption:
+    "Extra oxygen drawn from the reserve per hour while you are outside the habitat (suit supply). Plant output only reaches you indoors.",
+  leakRate:
+    "Oxygen vented per hour by each open puncture in the oxygen plant.",
+  leakEverySols:
+    "Average sols between new punctures. Seal them in the oxygen plant service view.",
+  maxPunctures: "Maximum number of open punctures at once.",
+  stressEvaPerHour:
+    "Fictional game stress gained per simulated hour outside, on top of radiation-driven stress.",
+  stressOxygenPenalty:
+    "Extra breathing load at 100% stress (0.5 = 50% more oxygen used). Game-balance value.",
 };
 export const legacyHelp: Record<string, string> = {
   duration: "Duration of the original training exercise in real seconds.",

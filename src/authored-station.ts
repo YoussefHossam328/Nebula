@@ -1,5 +1,6 @@
+import { insideHabitat } from "./layout";
 import * as T from "three";
-import RAPIER from "@dimforge/rapier3d-compat";
+import RAPIER from "@dimforge/rapier3d";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import type { Settings } from "./config";
 export function createAuthoredStation(scene: T.Scene, world: RAPIER.World) {
@@ -254,13 +255,7 @@ export function createAuthoredStation(scene: T.Scene, world: RAPIER.World) {
       s: Settings,
       charging?: boolean,
     ) {
-      const inside =
-        p.y < 2.7 &&
-        (Math.hypot(p.x - 2, p.z + 1) < 3 ||
-          Math.hypot(p.x + 7, p.z + 1) < 3 ||
-          Math.hypot(p.x - 2, p.z + 9.6) < 3 ||
-          (p.x > -4.4 && p.x < -0.6 && Math.abs(p.z + 1) < 1) ||
-          (Math.abs(p.x - 2) < 1 && p.z < -3.6 && p.z > -7));
+      const inside = insideHabitat(p);
       // Model is authored without a roof; fade front-facing walls for an unobstructed cutaway.
       wallMeshes.forEach((m) => {
         const mat = m.material as T.MeshStandardMaterial;
