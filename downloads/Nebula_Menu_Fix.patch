@@ -1,0 +1,22 @@
+--- a/src/boot.ts
++++ b/src/boot.ts
+@@ -27,6 +27,9 @@
+ window.__nebulaReady = () => {
+   parts.code = parts.physics = parts.scene = 1;
+   render();
++  // Keep the visual fade, but retire the loader heading and controls immediately.
++  boot.setAttribute("aria-hidden", "true");
++  boot.inert = true;
+   boot.classList.add("done");
+   setTimeout(() => boot.remove(), 700);
+ };
+--- a/browser-tests/mission.spec.ts
++++ b/browser-tests/mission.spec.ts
+@@ -9,6 +9,7 @@
+   await expect(
+     page.locator("#game-overlay").getByRole("heading", { name: "NEBULA", exact: true }),
+   ).toBeVisible();
++  await expect(page.getByRole("heading", { name: "NEBULA", exact: true })).toHaveCount(1);
+   await page.getByRole("button", { name: "Play", exact: true }).click();
+   await expect(
+     page.getByRole("heading", { name: "Welcome to Mars" }),
